@@ -1,0 +1,56 @@
+[project]
+name = "codex-hackathon"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.139.0",
+    "httpx>=0.28.1",
+    "openai>=2.45.0",
+    "pandas>=3.0.3",
+    "pillow>=12.3.0",
+    "pydantic>=2.13.4",
+    "sentence-transformers>=5.6.0",
+    "streamlit>=1.59.1",
+    "uvicorn>=0.51.0",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.156.6",
+    "pre-commit>=4.6.0",
+    "pyright>=1.1.411",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.15.21",
+]
+
+[tool.pyright]
+include = ["src", "scripts", "tests"]
+typeCheckingMode = "strict"
+reportUnknownMemberType = true
+reportUnknownArgumentType = true
+reportUnknownVariableType = true
+reportMissingTypeStubs = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF", "ANN"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers --strict-config"
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+    "live: requires external credentials and network",
+    "performance: local latency budget",
+]
