@@ -1,0 +1,29 @@
+{
+  "policy_version": "priority-v1",
+  "volume_points": [
+    {"minimum_reports": 3, "points": 1},
+    {"minimum_reports": 10, "points": 2},
+    {"minimum_reports": 20, "points": 3}
+  ],
+  "safety_signal_points": 3,
+  "sensitive_location_points": 2,
+  "unresolved_24h_points": 1,
+  "unresolved_48h_points": 2,
+  "photo_points": 1,
+  "sensitive_location_radius_metres": 250,
+  "band_thresholds": {
+    "low_max": 2,
+    "medium": 3,
+    "high": 5,
+    "critical": 7
+  },
+  "prototype_parameters": "SCM-inspired deterministic policy parameters; calibrate with historical council outcomes and policy review.",
+  "medium_report_count": 2,
+  "high_report_count": 10,
+  "critical_report_count": 20,
+  "high_unresolved_hours": 24,
+  "critical_unresolved_hours": 48,
+  "evidence_completeness_threshold": 0.5,
+  "critical_safety_signals": ["accident_injury", "exposed_electrical_hazard"],
+  "high_safety_signals": ["active_flooding", "blocked_road"]
+}
