@@ -1,0 +1,19 @@
+{
+  "version": "normalization-v1",
+  "aliases": {
+    "longkang sumbat": "longkang tersumbat",
+    "lampu jln": "lampu jalan",
+    "jln": "jalan",
+    "tmn": "taman",
+    "lrng": "lorong",
+    "blk": "blok",
+    "sek": "sekolah",
+    "smk": "sekolah menengah kebangsaan",
+    "sk": "sekolah kebangsaan",
+    "kg": "kampung",
+    "dpn": "depan",
+    "skolah": "sekolah",
+    "kat": "dekat",
+    "sampah tak kutip": "sampah tidak dikutip"
+  }
+}
