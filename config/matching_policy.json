@@ -1,0 +1,10 @@
+{
+  "policy_version": "matching-v1",
+  "geographic_radius_metres": 500,
+  "temporal_window_days": 7,
+  "semantic_threshold": 0.88,
+  "strong_entity_semantic_threshold": 0.92,
+  "model_name": "intfloat/multilingual-e5-small",
+  "normalization_version": "normalization-v1",
+  "prototype_parameters": "Initial configurable values; calibrate with historical council outcomes and policy review."
+}

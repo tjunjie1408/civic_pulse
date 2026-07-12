@@ -1,0 +1,1050 @@
+{
+  "benchmark_version": "hybrid-matching-v1",
+  "model_name": "intfloat/multilingual-e5-small",
+  "normalization_version": "normalization-v1",
+  "calibration_threshold": 0.9883089170662086,
+  "holdout_false_merges": 0,
+  "holdout_true_matches": 3,
+  "holdout_false_auto_merges": 0,
+  "holdout_auto_matches": 3,
+  "holdout_review_required": 8,
+  "holdout_no_matches": 9,
+  "holdout_positive_no_matches": 0,
+  "holdout_clear_positive_count": 4,
+  "holdout_clear_auto_matches": 3,
+  "holdout_clear_positive_no_matches": 0,
+  "clear_positive_auto_rate": 0.75,
+  "holdout_positive_count": 10,
+  "holdout_negative_count": 10,
+  "passed": true,
+  "decisions": [
+    {
+      "id": "P01",
+      "split": "calibration",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.9205415569260244,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [
+        {
+          "kind": "landmark",
+          "value": "school:is",
+          "raw": "school"
+        }
+      ],
+      "reasons": [
+        "semantic similarity 0.921 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "P02",
+      "split": "calibration",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.8842052968659729,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "conflicting",
+      "first_location_entities": [
+        {
+          "kind": "street",
+          "value": "melur sebab longkang",
+          "raw": "jalan melur sebab longkang"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "street",
+          "value": "melur",
+          "raw": "jalan melur the drainage"
+        }
+      ],
+      "reasons": [
+        "conflicting street entities",
+        "explicit location conflict prevents auto-match",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "P03",
+      "split": "calibration",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.9265776026799484,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [
+        {
+          "kind": "street",
+          "value": "depan sekolah",
+          "raw": "jalan depan sekolah ada"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "landmark",
+          "value": "school:a motorbike nearly fell",
+          "raw": "school"
+        }
+      ],
+      "reasons": [
+        "semantic similarity 0.927 is below 0.988 threshold",
+        "explicit entities exist but have no comparable kind",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "P04",
+      "split": "calibration",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.9537846553935663,
+      "decision": "auto_match",
+      "auto_match": true,
+      "location_compatibility": "compatible",
+      "first_location_entities": [
+        {
+          "kind": "block",
+          "value": "c",
+          "raw": "blok c"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "block",
+          "value": "c",
+          "raw": "block c"
+        }
+      ],
+      "reasons": [
+        "same category: rubbish",
+        "distance 124.3m within policy radius",
+        "time gap 24.0h within policy window",
+        "semantic similarity 0.954 meets threshold",
+        "at least one explicit location entity agrees",
+        "final decision: auto_match"
+      ]
+    },
+    {
+      "id": "P05",
+      "split": "calibration",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.9108763627713644,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "semantic similarity 0.911 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "P06",
+      "split": "calibration",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.9022280992425195,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "semantic similarity 0.902 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "P07",
+      "split": "calibration",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.9428658757232007,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "semantic similarity 0.943 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "P08",
+      "split": "calibration",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.8854288306268501,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "semantic similarity 0.885 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "P09",
+      "split": "calibration",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.9252728545283507,
+      "decision": "auto_match",
+      "auto_match": true,
+      "location_compatibility": "compatible",
+      "first_location_entities": [
+        {
+          "kind": "street",
+          "value": "teruk",
+          "raw": "jalan teruk dekat simpang"
+        },
+        {
+          "kind": "street",
+          "value": "kenanga",
+          "raw": "jalan kenanga"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "street",
+          "value": "kenanga",
+          "raw": "jalan kenanga junction"
+        }
+      ],
+      "reasons": [
+        "same category: pothole",
+        "distance 124.3m within policy radius",
+        "time gap 3.0h within policy window",
+        "semantic similarity 0.925 meets threshold",
+        "at least one explicit location entity agrees",
+        "final decision: auto_match"
+      ]
+    },
+    {
+      "id": "P10",
+      "split": "calibration",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.9142749397502753,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "semantic similarity 0.914 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "P11",
+      "split": "holdout",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.9196982351054312,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "semantic similarity 0.920 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "P12",
+      "split": "holdout",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.9166339864838399,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "semantic similarity 0.917 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "P13",
+      "split": "holdout",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.8952597694084037,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "semantic similarity 0.895 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "P14",
+      "split": "holdout",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.9632857294726936,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "semantic similarity 0.963 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "P15",
+      "split": "holdout",
+      "incident_expected": "match",
+      "positive_type": null,
+      "semantic_similarity": 0.9065671510662519,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "semantic similarity 0.907 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "N01",
+      "split": "calibration",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.8881452218323446,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "conflicting",
+      "first_location_entities": [
+        {
+          "kind": "street",
+          "value": "maju",
+          "raw": "taman maju"
+        },
+        {
+          "kind": "landmark",
+          "value": "school:taman maju",
+          "raw": "sekolah kebangsaan"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "landmark",
+          "value": "hospital:seri murni",
+          "raw": "hospital"
+        }
+      ],
+      "reasons": [
+        "distance 2356.9m exceeds 500.0m policy radius",
+        "conflicting landmark entities",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N02",
+      "split": "calibration",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.93121916307789,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "category mismatch: blocked_drain vs street_light",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N03",
+      "split": "calibration",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9883089170662086,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "conflicting",
+      "first_location_entities": [
+        {
+          "kind": "block",
+          "value": "a",
+          "raw": "blok a"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "block",
+          "value": "b",
+          "raw": "blok b"
+        }
+      ],
+      "reasons": [
+        "conflicting block entities",
+        "explicit location conflict prevents auto-match",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N04",
+      "split": "calibration",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9515068525622425,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [
+        {
+          "kind": "landmark",
+          "value": "market:besar",
+          "raw": "pasar"
+        }
+      ],
+      "second_location_entities": [],
+      "reasons": [
+        "distance 2356.9m exceeds 500.0m policy radius",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N05",
+      "split": "calibration",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9629210042335666,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "semantic similarity 0.963 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "N06",
+      "split": "calibration",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9139733382263894,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "category mismatch: blocked_drain vs street_light",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N07",
+      "split": "calibration",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9286737444575947,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [
+        {
+          "kind": "landmark",
+          "value": "station:minyak",
+          "raw": "stesen"
+        }
+      ],
+      "reasons": [
+        "semantic similarity 0.929 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "N08",
+      "split": "calibration",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9655974927525726,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "conflicting",
+      "first_location_entities": [
+        {
+          "kind": "landmark",
+          "value": "school:sebab longkang",
+          "raw": "sekolah"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "landmark",
+          "value": "school:sebab paip utama bocor",
+          "raw": "sekolah"
+        }
+      ],
+      "reasons": [
+        "conflicting landmark entities",
+        "explicit location conflict prevents auto-match",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N09",
+      "split": "calibration",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9552572566314179,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "compatible",
+      "first_location_entities": [
+        {
+          "kind": "street",
+          "value": "di",
+          "raw": "jalan di jalan kenanga"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "street",
+          "value": "di",
+          "raw": "jalan di jalan kenanga"
+        }
+      ],
+      "reasons": [
+        "time gap 1488.0h exceeds 7.0 day policy window",
+        "at least one explicit location entity agrees",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N10",
+      "split": "calibration",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9833822504140546,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "semantic similarity 0.983 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "N11",
+      "split": "holdout",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9259541176666747,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "conflicting",
+      "first_location_entities": [
+        {
+          "kind": "street",
+          "value": "berlubang",
+          "raw": "jalan berlubang dekat sekolah"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "street",
+          "value": "licin",
+          "raw": "jalan licin dekat sekolah"
+        },
+        {
+          "kind": "landmark",
+          "value": "school:sebab tumpahan minyak",
+          "raw": "sekolah"
+        }
+      ],
+      "reasons": [
+        "distance 2356.9m exceeds 500.0m policy radius",
+        "conflicting street entities",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N12",
+      "split": "holdout",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9632974496306921,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "category mismatch: blocked_drain vs rubbish",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N13",
+      "split": "holdout",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9112843900612925,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "compatible",
+      "first_location_entities": [
+        {
+          "kind": "street",
+          "value": "mawar",
+          "raw": "jalan mawar"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "street",
+          "value": "mawar",
+          "raw": "jalan mawar junction"
+        }
+      ],
+      "reasons": [
+        "semantic similarity 0.911 is below 0.920 threshold",
+        "at least one explicit location entity agrees",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "N14",
+      "split": "holdout",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9646468423843185,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "conflicting",
+      "first_location_entities": [
+        {
+          "kind": "block",
+          "value": "1",
+          "raw": "block 1"
+        },
+        {
+          "kind": "street",
+          "value": "anggerik",
+          "raw": "jalan anggerik near block"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "block",
+          "value": "9",
+          "raw": "block 9"
+        },
+        {
+          "kind": "street",
+          "value": "anggerik",
+          "raw": "jalan anggerik near block"
+        }
+      ],
+      "reasons": [
+        "conflicting block entities",
+        "explicit location conflict prevents auto-match",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N15",
+      "split": "holdout",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9614841692782152,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "time gap 3672.0h exceeds 7.0 day policy window",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "P16",
+      "split": "holdout",
+      "incident_expected": "match",
+      "positive_type": "clear",
+      "semantic_similarity": 0.9232639620510166,
+      "decision": "auto_match",
+      "auto_match": true,
+      "location_compatibility": "compatible",
+      "first_location_entities": [
+        {
+          "kind": "block",
+          "value": "a",
+          "raw": "blok a"
+        },
+        {
+          "kind": "street",
+          "value": "melur",
+          "raw": "taman melur"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "block",
+          "value": "a",
+          "raw": "block a"
+        },
+        {
+          "kind": "street",
+          "value": "melur",
+          "raw": "taman melur"
+        }
+      ],
+      "reasons": [
+        "same category: rubbish",
+        "distance 40.1m within policy radius",
+        "time gap 1.0h within policy window",
+        "semantic similarity 0.923 meets threshold",
+        "at least one explicit location entity agrees",
+        "final decision: auto_match"
+      ]
+    },
+    {
+      "id": "P17",
+      "split": "holdout",
+      "incident_expected": "match",
+      "positive_type": "clear",
+      "semantic_similarity": 0.9563698086713456,
+      "decision": "auto_match",
+      "auto_match": true,
+      "location_compatibility": "compatible",
+      "first_location_entities": [
+        {
+          "kind": "street",
+          "value": "ampang",
+          "raw": "jalan ampang dekat hospital"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "street",
+          "value": "ampang",
+          "raw": "jalan ampang near the"
+        }
+      ],
+      "reasons": [
+        "same category: pothole",
+        "distance 40.1m within policy radius",
+        "time gap 1.0h within policy window",
+        "semantic similarity 0.956 meets threshold",
+        "at least one explicit location entity agrees",
+        "final decision: auto_match"
+      ]
+    },
+    {
+      "id": "P18",
+      "split": "holdout",
+      "incident_expected": "match",
+      "positive_type": "clear",
+      "semantic_similarity": 0.9567293125262172,
+      "decision": "auto_match",
+      "auto_match": true,
+      "location_compatibility": "compatible",
+      "first_location_entities": [
+        {
+          "kind": "street",
+          "value": "jaya",
+          "raw": "taman jaya"
+        },
+        {
+          "kind": "landmark",
+          "value": "school:taman jaya",
+          "raw": "sekolah menengah kebangsaan"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "street",
+          "value": "jaya",
+          "raw": "taman jaya"
+        },
+        {
+          "kind": "landmark",
+          "value": "school:taman jaya",
+          "raw": "sekolah menengah kebangsaan"
+        }
+      ],
+      "reasons": [
+        "same category: street_light",
+        "distance 40.1m within policy radius",
+        "time gap 1.0h within policy window",
+        "semantic similarity 0.957 meets threshold",
+        "at least one explicit location entity agrees",
+        "final decision: auto_match"
+      ]
+    },
+    {
+      "id": "P19",
+      "split": "holdout",
+      "incident_expected": "match",
+      "positive_type": "clear",
+      "semantic_similarity": 0.9116038855172273,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "compatible",
+      "first_location_entities": [
+        {
+          "kind": "street",
+          "value": "baru",
+          "raw": "kampung baru selepas hujan"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "street",
+          "value": "baru",
+          "raw": "kampung baru after the"
+        }
+      ],
+      "reasons": [
+        "semantic similarity 0.912 is below 0.920 threshold",
+        "at least one explicit location entity agrees",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "P20",
+      "split": "holdout",
+      "incident_expected": "match",
+      "positive_type": "ambiguous",
+      "semantic_similarity": 0.9256731086742727,
+      "decision": "review_required",
+      "auto_match": false,
+      "location_compatibility": "unknown",
+      "first_location_entities": [],
+      "second_location_entities": [],
+      "reasons": [
+        "semantic similarity 0.926 is below 0.988 threshold",
+        "one or both complaints lack explicit comparable location entities",
+        "final decision: review_required"
+      ]
+    },
+    {
+      "id": "N16",
+      "split": "holdout",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.963579142627581,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "conflicting",
+      "first_location_entities": [
+        {
+          "kind": "block",
+          "value": "a",
+          "raw": "block a"
+        },
+        {
+          "kind": "street",
+          "value": "ampang",
+          "raw": "jalan ampang"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "block",
+          "value": "b",
+          "raw": "block b"
+        },
+        {
+          "kind": "street",
+          "value": "ampang",
+          "raw": "jalan ampang"
+        }
+      ],
+      "reasons": [
+        "conflicting block entities",
+        "explicit location conflict prevents auto-match",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N17",
+      "split": "holdout",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9780029767677916,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "conflicting",
+      "first_location_entities": [
+        {
+          "kind": "block",
+          "value": "a",
+          "raw": "block a"
+        },
+        {
+          "kind": "street",
+          "value": "ampang",
+          "raw": "jalan ampang near block"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "block",
+          "value": "c",
+          "raw": "block c"
+        },
+        {
+          "kind": "street",
+          "value": "ampang",
+          "raw": "jalan ampang near block"
+        }
+      ],
+      "reasons": [
+        "conflicting block entities",
+        "explicit location conflict prevents auto-match",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N18",
+      "split": "holdout",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9735642614845248,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "conflicting",
+      "first_location_entities": [
+        {
+          "kind": "street",
+          "value": "maju",
+          "raw": "taman maju"
+        },
+        {
+          "kind": "landmark",
+          "value": "school:taman maju",
+          "raw": "sekolah kebangsaan"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "street",
+          "value": "jaya",
+          "raw": "taman jaya"
+        },
+        {
+          "kind": "landmark",
+          "value": "school:taman jaya",
+          "raw": "sekolah kebangsaan"
+        }
+      ],
+      "reasons": [
+        "conflicting landmark entities",
+        "explicit location conflict prevents auto-match",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N19",
+      "split": "holdout",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.9555031795026506,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "conflicting",
+      "first_location_entities": [
+        {
+          "kind": "street",
+          "value": "melur",
+          "raw": "jalan melur"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "street",
+          "value": "kenanga",
+          "raw": "jalan kenanga"
+        }
+      ],
+      "reasons": [
+        "conflicting street entities",
+        "explicit location conflict prevents auto-match",
+        "final decision: no_match"
+      ]
+    },
+    {
+      "id": "N20",
+      "split": "holdout",
+      "incident_expected": "non_match",
+      "positive_type": null,
+      "semantic_similarity": 0.979243332537928,
+      "decision": "no_match",
+      "auto_match": false,
+      "location_compatibility": "conflicting",
+      "first_location_entities": [
+        {
+          "kind": "unit",
+          "value": "1",
+          "raw": "unit 1"
+        }
+      ],
+      "second_location_entities": [
+        {
+          "kind": "unit",
+          "value": "2",
+          "raw": "unit 2"
+        }
+      ],
+      "reasons": [
+        "conflicting unit entities",
+        "explicit location conflict prevents auto-match",
+        "final decision: no_match"
+      ]
+    }
+  ]
+}
