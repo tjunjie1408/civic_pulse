@@ -1,0 +1,14 @@
+[
+  {
+    "id": "school-taman-maju",
+    "kind": "school",
+    "latitude": 3.1390,
+    "longitude": 101.6869
+  },
+  {
+    "id": "hospital-seri-murni",
+    "kind": "hospital",
+    "latitude": 3.1450,
+    "longitude": 101.6900
+  }
+]
