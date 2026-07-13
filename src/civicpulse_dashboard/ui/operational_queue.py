@@ -11,6 +11,7 @@ from civicpulse_dashboard.api_client import ApiClient
 from civicpulse_dashboard.api_errors import DashboardApiError
 from civicpulse_dashboard.api_models import IncidentListResponse
 from civicpulse_dashboard.state import get_session_state
+from civicpulse_dashboard.ui.incident_detail import render_incident_detail
 
 
 def queue_rows(page: IncidentListResponse) -> list[dict[str, str | int]]:
@@ -115,3 +116,16 @@ def render_operational_queue(client: ApiClient) -> None:
 
     st.write(f"Showing {len(page.items)} of {page.total} incident snapshots")
     st.table(queue_rows(page))  # pyright: ignore[reportUnknownMemberType]
+    incident_ids = [str(incident.incident_id) for incident in page.items]
+    current_index = (
+        incident_ids.index(state.selected_incident_snapshot_id)
+        if state.selected_incident_snapshot_id in incident_ids
+        else 0
+    )
+    selected_incident = st.selectbox(
+        "Open incident snapshot",
+        options=incident_ids,
+        index=current_index,
+    )
+    state.selected_incident_snapshot_id = selected_incident
+    render_incident_detail(client, state, state.selected_incident_snapshot_id)

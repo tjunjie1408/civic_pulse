@@ -16,6 +16,9 @@ from civicpulse_dashboard.api_models import (
     HealthResponse,
     IncidentDetailResponse,
     IncidentListResponse,
+    LiveResponse,
+    ReviewDetailResponse,
+    ReviewListResponse,
 )
 
 DEFAULT_TIMEOUT = httpx.Timeout(connect=2.0, read=5.0, write=5.0, pool=2.0)
@@ -76,11 +79,26 @@ class ApiClient:
     def get_incident(self, incident_id: str) -> IncidentDetailResponse:
         return self._get_model(f"/incidents/{incident_id}", model=IncidentDetailResponse)
 
+    def list_reviews(
+        self,
+        *,
+        status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> ReviewListResponse:
+        params: dict[str, str | int] = {"limit": limit, "offset": offset}
+        if status is not None:
+            params["status"] = status
+        return self._get_model("/reviews", params=params, model=ReviewListResponse)
+
+    def get_review(self, review_id: str) -> ReviewDetailResponse:
+        return self._get_model(f"/reviews/{review_id}", model=ReviewDetailResponse)
+
     def health_ready(self) -> HealthResponse:
         return self._get_model("/health/ready", model=HealthResponse)
 
-    def health_live(self) -> HealthResponse:
-        return self._get_model("/health/live", model=HealthResponse)
+    def health_live(self) -> LiveResponse:
+        return self._get_model("/health/live", model=LiveResponse)
 
     def _get_model[T: Any](
         self,

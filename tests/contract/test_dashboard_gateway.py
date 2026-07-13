@@ -19,9 +19,10 @@ from civicpulse_dashboard.api_models import (
     HealthResponse,
     IncidentListResponse,
     IncidentSummaryResponse,
+    LiveResponse,
     PriorityResponse,
 )
-from civicpulse_dashboard.pages.operational_queue import queue_rows
+from civicpulse_dashboard.ui.operational_queue import queue_rows
 
 ROOT = Path(__file__).parents[2]
 OPENAPI = ROOT / "tests" / "contracts" / "openapi-v1.json"
@@ -183,6 +184,16 @@ def test_gateway_maps_unreachable_api_to_safe_error() -> None:
     assert raised.value.code == "api_unreachable"
     assert raised.value.status_code == 0
     assert "socket details" not in raised.value.user_message
+
+
+def test_gateway_parses_legal_liveness_response() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"status": "alive"})
+
+    with ApiClient("http://api.test/api/v1", transport=httpx.MockTransport(handler)) as client:
+        response = client.health_live()
+
+    assert response == LiveResponse()
 
 
 def test_queue_rows_keep_api_order_and_separate_conflict_priority() -> None:
