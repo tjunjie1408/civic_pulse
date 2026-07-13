@@ -287,3 +287,8 @@ class SubmissionResult(StrictModel):
     incident: Incident
     priority: PriorityAssessment
     created: bool
+    previous_incident_ids: tuple[UUID, ...] = ()
+    current_incident_ids: tuple[UUID, ...] = ()
+    relationship_decisions: tuple[RelationshipEdge, ...] = ()
+    incidents: tuple[Incident, ...] = ()
+    priorities: tuple[PriorityAssessment, ...] = ()

@@ -10,6 +10,7 @@ from civicpulse.api.dto.common import ApiModel
 from civicpulse.api.errors import install_error_handlers
 from civicpulse.api.routes.health import router as health_router
 from civicpulse.api.routes.incidents import router as incidents_router
+from civicpulse.api.routes.mutations import router as mutations_router
 from civicpulse.incident_query import IncidentQueryService
 from civicpulse.repository import SQLiteRepository
 from civicpulse.service import CivicPulseService, HealthReport
@@ -19,6 +20,8 @@ class AppSettings(ApiModel):
     title: str = "CivicPulse-lite API"
     version: str = "1.0.0"
     api_prefix: str = "/api/v1"
+    admin_reset_enabled: bool = False
+    seed_path: str = "data/seed_complaints.json"
 
 
 def create_app(
@@ -36,7 +39,9 @@ def create_app(
     app.state.repository = repository
     app.state.health_service = health_service
     app.state.incident_query_service = incident_query_service
+    app.state.settings = resolved
     app.include_router(health_router, prefix=resolved.api_prefix)
     app.include_router(incidents_router, prefix=resolved.api_prefix)
+    app.include_router(mutations_router, prefix=resolved.api_prefix)
     install_error_handlers(app)
     return app

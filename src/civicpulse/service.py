@@ -20,6 +20,7 @@ from civicpulse.domain import (
     Complaint,
     ComplaintInput,
     MatchState,
+    PriorityLevel,
     RelationshipDecisionSource,
     RelationshipEdge,
     ReviewRecord,
@@ -74,6 +75,12 @@ class SeedResult(StrictModel):
     incident_ids: tuple[UUID, ...]
     review_ids: tuple[UUID, ...]
     priorities: tuple[PriorityAssessment, ...]
+    review_counts: dict[str, int] = Field(default_factory=dict)
+    priority_counts: dict[str, int] = Field(default_factory=dict)
+
+
+class IdempotencyConflict(ValueError):
+    """Raised when a key is reused with a different normalized request."""
 
 
 class HealthStatus(StrEnum):
@@ -240,6 +247,23 @@ class CivicPulseService:
             category=payload.category or prediction.category,
             photo_path=payload.photo_path,
         )
+
+    @staticmethod
+    def _request_fingerprint(complaint: Complaint) -> str:
+        material = json.dumps(
+            {
+                "text": complaint.normalized_text,
+                "latitude": complaint.latitude,
+                "longitude": complaint.longitude,
+                "reported_at": complaint.reported_at.astimezone(timezone.utc).isoformat(),
+                "category": (complaint.category or Category.OTHER).value,
+                "photo_path": complaint.photo_path,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        return sha256(material.encode("utf-8")).hexdigest()
 
     def _relationships(self, complaints: Sequence[Complaint], vectors: Sequence[Sequence[float]]) -> list[ClusteringRelationship]:
         relationships: list[ClusteringRelationship] = []
@@ -472,6 +496,14 @@ class CivicPulseService:
             incident_ids=tuple(sorted((incident.incident_id for incident in incidents), key=str)),
             review_ids=tuple(sorted((review.review_id for review in review_records), key=str)),
             priorities=priorities,
+            review_counts={
+                status.value: sum(review.status is status for review in review_records)
+                for status in ReviewStatus
+            },
+            priority_counts={
+                level.value: sum(priority.level is level for priority in priorities)
+                for level in PriorityLevel
+            },
         )
 
     def submit_complaint(
@@ -481,8 +513,18 @@ class CivicPulseService:
         *,
         now: datetime | None = None,
     ) -> SubmissionResult:
-        existing = self.repository.get_by_idempotency_key(idempotency_key)
-        candidate = existing or self._to_complaint(payload)
+        candidate = self._to_complaint(payload)
+        fingerprint = self._request_fingerprint(candidate)
+        record = self.repository.get_submission_record(idempotency_key)
+        if record is not None:
+            stored_fingerprint = record.request_fingerprint or self._request_fingerprint(record.complaint)
+            if stored_fingerprint != fingerprint:
+                raise IdempotencyConflict("idempotency key was reused with a different request")
+            if record.result_payload is not None:
+                return SubmissionResult.model_validate_json(record.result_payload).model_copy(update={"created": False})
+        existing = None if record is None else record.complaint
+        candidate = existing or candidate
+        previous_incidents = tuple(self.repository.list_incidents())
         current = self.repository.list_complaints()
         if existing is None:
             current = [*current, candidate]
@@ -491,7 +533,7 @@ class CivicPulseService:
         vectors = self.embedding_provider.embed([item.normalized_text for item in current])
         if existing is None:
             try:
-                self.repository.add_complaint(candidate, idempotency_key)
+                self.repository.add_complaint(candidate, idempotency_key, fingerprint)
                 self.repository.save_embedding(
                     candidate.id,
                     vectors[-1],
@@ -505,31 +547,42 @@ class CivicPulseService:
         try:
             relationships = self._relationships(current, vectors)
             incidents = build_incidents(current, relationships)
-            self.repository.replace_incidents(incidents)
             graph_version = self._graph_version(relationships)
             created_at = now or datetime.now(timezone.utc)
+            priorities = tuple(
+                assess_priority(incident, current, self.sensitive_locations, self.priority_policy, now or datetime.now(timezone.utc))
+                for incident in incidents
+            )
+            target = next(incident for incident in incidents if candidate.id in incident.complaint_ids)
+            target_priority = next(
+                priority for incident, priority in zip(incidents, priorities, strict=True) if incident.incident_id == target.incident_id
+            )
+            result = SubmissionResult(
+                complaint=candidate,
+                incident=target,
+                priority=target_priority,
+                created=existing is None,
+                previous_incident_ids=tuple(item.incident_id for item in previous_incidents),
+                current_incident_ids=tuple(item.incident_id for item in incidents),
+                relationship_decisions=tuple(
+                    edge
+                    for incident in incidents
+                    for edge in (*incident.confirmed_edges, *incident.review_candidates)
+                ),
+                incidents=tuple(incidents),
+                priorities=priorities,
+            )
+            if existing is None:
+                self.repository.save_submission_result(idempotency_key, result.model_dump_json())
             for incident in incidents:
                 for edge in incident.review_candidates:
                     self.repository.create_review(edge, created_at, graph_version)
+            self.repository.replace_incidents(incidents)
+            return result
         except Exception:
             if existing is None:
                 self.repository.delete_complaint(candidate.id)
             raise
-
-        target = next(incident for incident in incidents if candidate.id in incident.complaint_ids)
-        priority = assess_priority(
-            target,
-            current,
-            self.sensitive_locations,
-            self.priority_policy,
-            now or datetime.now(timezone.utc),
-        )
-        return SubmissionResult(
-            complaint=candidate,
-            incident=target,
-            priority=priority,
-            created=existing is None,
-        )
 
     def resolve_review(
         self,

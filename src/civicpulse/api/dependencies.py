@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import cast
+from typing import Protocol, cast
 
 from fastapi import Depends, Request
 
 from civicpulse.api.errors import ApiError
 from civicpulse.incident_query import IncidentQueryService
 from civicpulse.service import CivicPulseService, HealthReport
+
+
+class AppSettingsProtocol(Protocol):
+    admin_reset_enabled: bool
+    seed_path: str
 
 
 def get_service(request: Request) -> CivicPulseService:
@@ -21,6 +26,11 @@ def get_service(request: Request) -> CivicPulseService:
             status_code=503,
         )
     return cast(CivicPulseService, service)
+
+
+def get_optional_service(request: Request) -> CivicPulseService | None:
+    service = getattr(request.app.state, "service", None)
+    return None if service is None else cast(CivicPulseService, service)
 
 
 def get_health_service(
@@ -52,3 +62,14 @@ def get_incident_query_service(
         priority_policy=service.priority_policy,
         sensitive_locations=service.sensitive_locations,
     )
+
+
+def get_app_settings(request: Request) -> AppSettingsProtocol:
+    settings = getattr(request.app.state, "settings", None)
+    if settings is None:
+        raise ApiError(
+            code="readiness_failure",
+            message="Application settings are not configured.",
+            status_code=503,
+        )
+    return cast(AppSettingsProtocol, settings)

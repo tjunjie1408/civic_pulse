@@ -6,6 +6,7 @@ import json
 import sqlite3
 import struct
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import datetime
 from math import isfinite
 from pathlib import Path
@@ -23,6 +24,13 @@ from civicpulse.domain import (
     ReviewStatus,
     MatchState,
 )
+
+
+@dataclass(frozen=True)
+class SubmissionRecord:
+    complaint: Complaint
+    request_fingerprint: str | None
+    result_payload: str | None
 
 
 class SQLiteRepository:
@@ -109,6 +117,8 @@ class SQLiteRepository:
                     CREATE TABLE IF NOT EXISTS submission_keys (
                         idempotency_key TEXT PRIMARY KEY,
                         complaint_id TEXT NOT NULL UNIQUE REFERENCES complaints(id) ON DELETE CASCADE
+                        ,request_fingerprint TEXT
+                        ,result_payload TEXT
                     );
                     CREATE TABLE IF NOT EXISTS reviews (
                         review_id TEXT PRIMARY KEY,
@@ -129,6 +139,14 @@ class SQLiteRepository:
                     );
                     """
                 )
+                columns = {
+                    row["name"]
+                    for row in connection.execute("PRAGMA table_info(submission_keys)").fetchall()
+                }
+                if "request_fingerprint" not in columns:
+                    connection.execute("ALTER TABLE submission_keys ADD COLUMN request_fingerprint TEXT")
+                if "result_payload" not in columns:
+                    connection.execute("ALTER TABLE submission_keys ADD COLUMN result_payload TEXT")
                 connection.commit()
             except Exception:
                 connection.rollback()
@@ -155,7 +173,12 @@ class SQLiteRepository:
             photo_path=row["photo_path"],
         )
 
-    def add_complaint(self, complaint: Complaint, idempotency_key: str) -> Complaint:
+    def add_complaint(
+        self,
+        complaint: Complaint,
+        idempotency_key: str,
+        request_fingerprint: str | None = None,
+    ) -> Complaint:
         if not idempotency_key.strip():
             raise ValueError("idempotency_key must not be empty")
         with self.connect() as connection:
@@ -187,8 +210,8 @@ class SQLiteRepository:
                     ),
                 )
                 connection.execute(
-                    "INSERT INTO submission_keys(idempotency_key,complaint_id) VALUES(?,?)",
-                    (idempotency_key, str(complaint.id)),
+                    "INSERT INTO submission_keys(idempotency_key,complaint_id,request_fingerprint) VALUES(?,?,?)",
+                    (idempotency_key, str(complaint.id), request_fingerprint),
                 )
                 connection.commit()
                 return complaint
@@ -197,12 +220,39 @@ class SQLiteRepository:
                 raise
 
     def get_by_idempotency_key(self, idempotency_key: str) -> Complaint | None:
+        record = self.get_submission_record(idempotency_key)
+        return None if record is None else record.complaint
+
+    def get_submission_record(self, idempotency_key: str) -> SubmissionRecord | None:
         with self.connect() as connection:
             row = connection.execute(
-                "SELECT c.* FROM complaints c JOIN submission_keys s ON s.complaint_id=c.id WHERE s.idempotency_key=?",
+                "SELECT c.*,s.request_fingerprint,s.result_payload "
+                "FROM complaints c JOIN submission_keys s ON s.complaint_id=c.id "
+                "WHERE s.idempotency_key=?",
                 (idempotency_key,),
             ).fetchone()
-        return None if row is None else self._complaint_from_row(row)
+        if row is None:
+            return None
+        return SubmissionRecord(
+            complaint=self._complaint_from_row(row),
+            request_fingerprint=row["request_fingerprint"],
+            result_payload=row["result_payload"],
+        )
+
+    def save_submission_result(self, idempotency_key: str, result_payload: str) -> None:
+        with self.connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            try:
+                updated = connection.execute(
+                    "UPDATE submission_keys SET result_payload=? WHERE idempotency_key=?",
+                    (result_payload, idempotency_key),
+                )
+                if updated.rowcount != 1:
+                    raise ValueError("unknown idempotency key")
+                connection.commit()
+            except Exception:
+                connection.rollback()
+                raise
 
     def delete_complaint(self, complaint_id: UUID) -> None:
         with self.connect() as connection:

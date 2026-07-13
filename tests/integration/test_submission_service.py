@@ -1,9 +1,11 @@
 from datetime import datetime, timezone
 
+import pytest
+
 from civicpulse.config import load_matching_policy, load_priority_policy
 from civicpulse.domain import Category, ComplaintInput, MatchState
 from civicpulse.repository import SQLiteRepository
-from civicpulse.service import CivicPulseService
+from civicpulse.service import CivicPulseService, IdempotencyConflict
 
 
 class FakeProvider:
@@ -77,8 +79,38 @@ def test_replaying_idempotency_key_does_not_create_duplicate(tmp_path):
     application, repository = service(tmp_path)
     first = application.submit_complaint(payload("Pothole at Block A Jalan Ampang"), "one", now=NOW)
 
-    replay = application.submit_complaint(payload("Different text ignored on replay"), "one", now=NOW)
+    replay = application.submit_complaint(payload(" Pothole at Block A Jalan Ampang "), "one", now=NOW)
 
     assert replay.created is False
     assert replay.complaint.id == first.complaint.id
+    assert len(repository.list_complaints()) == 1
+
+
+def test_reusing_idempotency_key_with_different_payload_is_rejected(tmp_path):
+    application, repository = service(tmp_path)
+    application.submit_complaint(payload("Pothole at Block A Jalan Ampang"), "one", now=NOW)
+
+    with pytest.raises(IdempotencyConflict):
+        application.submit_complaint(payload("Different pothole at Block B"), "one", now=NOW)
+
+    assert len(repository.list_complaints()) == 1
+
+
+def test_idempotency_replay_preserves_original_transition_after_restart(tmp_path):
+    application, repository = service(tmp_path)
+    first = application.submit_complaint(payload("Pothole at Block A Jalan Ampang"), "one", now=NOW)
+    restarted = CivicPulseService(
+        repository,
+        load_matching_policy("config/matching_policy.json"),
+        load_priority_policy("config/priority_policy.json"),
+        FakeProvider(),
+    )
+
+    replay = restarted.submit_complaint(payload("Pothole at Block A Jalan Ampang"), "one", now=NOW)
+
+    assert replay.created is False
+    assert replay.complaint.id == first.complaint.id
+    assert replay.previous_incident_ids == first.previous_incident_ids
+    assert replay.current_incident_ids == first.current_incident_ids
+    assert replay.incident == first.incident
     assert len(repository.list_complaints()) == 1

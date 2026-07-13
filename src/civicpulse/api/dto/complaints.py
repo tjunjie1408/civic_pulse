@@ -16,6 +16,7 @@ class ComplaintCreateRequest(ApiModel):
     latitude: float = Field(ge=-90, le=90, description="Latitude in decimal degrees.")
     longitude: float = Field(ge=-180, le=180, description="Longitude in decimal degrees.")
     reported_at: datetime = Field(description="Timezone-aware report time, normalized to UTC.")
+    category: Category | None = None
     photo_path: str | None = None
 
     @field_validator("reported_at")

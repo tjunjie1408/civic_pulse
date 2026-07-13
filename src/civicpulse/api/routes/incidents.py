@@ -33,7 +33,7 @@ def _priority(read: IncidentRead) -> PriorityResponse | None:
     )
 
 
-def _edge_response(edge: RelationshipEdge) -> RelationshipEdgeResponse:
+def to_edge_response(edge: RelationshipEdge) -> RelationshipEdgeResponse:
     return RelationshipEdgeResponse(
         left_id=edge.left_id,
         right_id=edge.right_id,
@@ -44,7 +44,7 @@ def _edge_response(edge: RelationshipEdge) -> RelationshipEdgeResponse:
     )
 
 
-def _summary(read: IncidentRead) -> IncidentSummaryResponse:
+def to_incident_summary(read: IncidentRead) -> IncidentSummaryResponse:
     incident = read.incident
     return IncidentSummaryResponse(
         incident_id=incident.incident_id,
@@ -92,7 +92,7 @@ def list_incidents(
         )
     )
     return IncidentListResponse(
-        items=[_summary(item) for item in page.items],
+        items=[to_incident_summary(item) for item in page.items],
         limit=page.limit,
         offset=page.offset,
         total=page.total,
@@ -123,12 +123,12 @@ def get_incident(
         )
     incident = read.incident
     return IncidentDetailResponse(
-        **_summary(read).model_dump(),
+        **to_incident_summary(read).model_dump(),
         complaint_ids=list(incident.complaint_ids),
         review_candidate_ids=list(incident.review_candidate_ids),
-        confirmed_edges=[_edge_response(edge) for edge in incident.confirmed_edges],
+        confirmed_edges=[to_edge_response(edge) for edge in incident.confirmed_edges],
         review_candidates=[
-            ReviewCandidateResponse(**_edge_response(edge).model_dump())
+            ReviewCandidateResponse(**to_edge_response(edge).model_dump())
             for edge in incident.review_candidates
         ],
     )
