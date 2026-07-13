@@ -11,6 +11,7 @@ from civicpulse.api.dependencies import (
     get_optional_service,
     get_service,
 )
+from civicpulse.api.dto.common import ApiErrorResponse
 from civicpulse.api.dto.complaints import ComplaintCreateRequest, ComplaintResponse
 from civicpulse.api.dto.incidents import IncidentSummaryResponse, PriorityResponse
 from civicpulse.api.dto.mutations import (
@@ -94,6 +95,11 @@ def _submission_response(result: SubmissionResult) -> ComplaintSubmissionRespons
     status_code=201,
     operation_id="complaintsCreate",
     description="Submit a complaint through the application mutation service.",
+    responses={
+        409: {"model": ApiErrorResponse, "description": "Idempotency conflict."},
+        422: {"model": ApiErrorResponse, "description": "Request validation failed."},
+        500: {"model": ApiErrorResponse, "description": "Internal server error."},
+    },
 )
 def submit_complaint(
     request: ComplaintCreateRequest,
@@ -139,6 +145,11 @@ def submit_complaint(
     response_model=SeedResetResponse,
     operation_id="adminReset",
     description="Admin operation: restore the server-configured demo seed; disabled by default.",
+    responses={
+        403: {"model": ApiErrorResponse, "description": "Administrative reset is disabled."},
+        500: {"model": ApiErrorResponse, "description": "Internal server error."},
+        503: {"model": ApiErrorResponse, "description": "Seed configuration is unavailable."},
+    },
 )
 def reset_seed(
     service: CivicPulseService | None = Depends(get_optional_service),  # noqa: B008

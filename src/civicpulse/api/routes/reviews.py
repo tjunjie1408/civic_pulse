@@ -8,6 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 
 from civicpulse.api.dependencies import get_service
+from civicpulse.api.dto.common import ApiErrorResponse
 from civicpulse.api.dto.complaints import ComplaintResponse
 from civicpulse.api.dto.incidents import IncidentSummaryResponse, PriorityResponse
 from civicpulse.api.dto.reviews import (
@@ -154,7 +155,12 @@ def _priority_response(priority: PriorityAssessment | None) -> PriorityResponse 
     )
 
 
-@router.get("", response_model=ReviewListResponse, operation_id="reviewsList")
+@router.get(
+    "",
+    response_model=ReviewListResponse,
+    operation_id="reviewsList",
+    responses={422: {"model": ApiErrorResponse, "description": "Request validation failed."}},
+)
 def list_reviews(
     service: CivicPulseService = Depends(get_service),  # noqa: B008
     status: ReviewStatus | None = Query(default=None),  # noqa: B008
@@ -171,7 +177,15 @@ def list_reviews(
     )
 
 
-@router.get("/{review_id}", response_model=ReviewDetailResponse, operation_id="reviewDetail")
+@router.get(
+    "/{review_id}",
+    response_model=ReviewDetailResponse,
+    operation_id="reviewDetail",
+    responses={
+        404: {"model": ApiErrorResponse, "description": "Review not found."},
+        422: {"model": ApiErrorResponse, "description": "Request validation failed."},
+    },
+)
 def get_review(
     review_id: UUID,
     service: CivicPulseService = Depends(get_service),  # noqa: B008
@@ -269,6 +283,12 @@ def _resolve(
     "/{review_id}/approve",
     response_model=ReviewMutationResponse,
     operation_id="reviewApprove",
+    responses={
+        404: {"model": ApiErrorResponse, "description": "Review not found."},
+        409: {"model": ApiErrorResponse, "description": "Review cannot be resolved."},
+        422: {"model": ApiErrorResponse, "description": "Request validation failed."},
+        500: {"model": ApiErrorResponse, "description": "Internal server error."},
+    },
 )
 def approve_review(
     review_id: UUID,
@@ -282,6 +302,12 @@ def approve_review(
     "/{review_id}/reject",
     response_model=ReviewMutationResponse,
     operation_id="reviewReject",
+    responses={
+        404: {"model": ApiErrorResponse, "description": "Review not found."},
+        409: {"model": ApiErrorResponse, "description": "Review cannot be resolved."},
+        422: {"model": ApiErrorResponse, "description": "Request validation failed."},
+        500: {"model": ApiErrorResponse, "description": "Internal server error."},
+    },
 )
 def reject_review(
     review_id: UUID,

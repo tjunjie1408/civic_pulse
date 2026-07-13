@@ -1,0 +1,1971 @@
+{
+  "components": {
+    "schemas": {
+      "ApiErrorBody": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonScalar"
+            },
+            "title": "Details",
+            "type": "object"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "details",
+          "request_id"
+        ],
+        "title": "ApiErrorBody",
+        "type": "object"
+      },
+      "ApiErrorResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ApiErrorBody"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ApiErrorResponse",
+        "type": "object"
+      },
+      "Category": {
+        "description": "Supported complaint categories; OTHER requires human review.",
+        "enum": [
+          "pothole",
+          "blocked_drain",
+          "flooding",
+          "rubbish",
+          "street_light",
+          "other"
+        ],
+        "title": "Category",
+        "type": "string"
+      },
+      "ClusteringStatus": {
+        "enum": [
+          "confirmed",
+          "isolated",
+          "conflict"
+        ],
+        "title": "ClusteringStatus",
+        "type": "string"
+      },
+      "ComplaintCreateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Category"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latitude": {
+            "description": "Latitude in decimal degrees.",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "description": "Longitude in decimal degrees.",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude",
+            "type": "number"
+          },
+          "photo_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Path"
+          },
+          "reported_at": {
+            "description": "Timezone-aware report time, normalized to UTC.",
+            "format": "date-time",
+            "title": "Reported At",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "latitude",
+          "longitude",
+          "reported_at"
+        ],
+        "title": "ComplaintCreateRequest",
+        "type": "object"
+      },
+      "ComplaintResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "complaint_id": {
+            "format": "uuid",
+            "title": "Complaint Id",
+            "type": "string"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          },
+          "photo_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Path"
+          },
+          "reported_at": {
+            "format": "date-time",
+            "title": "Reported At",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "complaint_id",
+          "text",
+          "category",
+          "latitude",
+          "longitude",
+          "reported_at"
+        ],
+        "title": "ComplaintResponse",
+        "type": "object"
+      },
+      "ComplaintSubmissionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "complaint": {
+            "$ref": "#/components/schemas/ComplaintResponse"
+          },
+          "created": {
+            "title": "Created",
+            "type": "boolean"
+          },
+          "incident_transition": {
+            "$ref": "#/components/schemas/IncidentTransitionResponse"
+          },
+          "incidents": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentSummaryResponse"
+            },
+            "title": "Incidents",
+            "type": "array"
+          },
+          "priorities": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PriorityResponse"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Priorities",
+            "type": "array"
+          },
+          "relationship_decisions": {
+            "items": {
+              "$ref": "#/components/schemas/RelationshipEdgeResponse"
+            },
+            "title": "Relationship Decisions",
+            "type": "array"
+          },
+          "replayed": {
+            "title": "Replayed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "complaint",
+          "created",
+          "replayed",
+          "relationship_decisions",
+          "incident_transition",
+          "incidents",
+          "priorities"
+        ],
+        "title": "ComplaintSubmissionResponse",
+        "type": "object"
+      },
+      "GeoPointResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "latitude": {
+            "description": "Latitude in decimal degrees.",
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "description": "Longitude in decimal degrees.",
+            "title": "Longitude",
+            "type": "number"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "GeoPointResponse",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthComponentResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "recovery_command": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery Command"
+          },
+          "status": {
+            "$ref": "#/components/schemas/HealthStatus"
+          }
+        },
+        "required": [
+          "status",
+          "message"
+        ],
+        "title": "HealthComponentResponse",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "core_ready": {
+            "title": "Core Ready",
+            "type": "boolean"
+          },
+          "database": {
+            "$ref": "#/components/schemas/HealthComponentResponse"
+          },
+          "embedding_model": {
+            "$ref": "#/components/schemas/HealthComponentResponse"
+          },
+          "photo_provider": {
+            "$ref": "#/components/schemas/HealthComponentResponse"
+          },
+          "policies": {
+            "$ref": "#/components/schemas/HealthComponentResponse"
+          },
+          "seed": {
+            "$ref": "#/components/schemas/HealthComponentResponse"
+          },
+          "status": {
+            "$ref": "#/components/schemas/HealthStatus"
+          }
+        },
+        "required": [
+          "status",
+          "core_ready",
+          "database",
+          "policies",
+          "embedding_model",
+          "seed",
+          "photo_provider"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "HealthStatus": {
+        "enum": [
+          "healthy",
+          "degraded",
+          "unavailable"
+        ],
+        "title": "HealthStatus",
+        "type": "string"
+      },
+      "IncidentDetailResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "category_summary": {
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            },
+            "title": "Category Summary",
+            "type": "array"
+          },
+          "centroid": {
+            "$ref": "#/components/schemas/GeoPointResponse"
+          },
+          "complaint_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Complaint Ids",
+            "type": "array"
+          },
+          "confirmed_edges": {
+            "items": {
+              "$ref": "#/components/schemas/RelationshipEdgeResponse"
+            },
+            "title": "Confirmed Edges",
+            "type": "array"
+          },
+          "confirmed_report_count": {
+            "title": "Confirmed Report Count",
+            "type": "integer"
+          },
+          "conflict_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Conflict Reasons",
+            "type": "array"
+          },
+          "earliest_reported_at": {
+            "format": "date-time",
+            "title": "Earliest Reported At",
+            "type": "string"
+          },
+          "incident_id": {
+            "format": "uuid",
+            "title": "Incident Id",
+            "type": "string"
+          },
+          "latest_reported_at": {
+            "format": "date-time",
+            "title": "Latest Reported At",
+            "type": "string"
+          },
+          "pending_candidate_count": {
+            "title": "Pending Candidate Count",
+            "type": "integer"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PriorityResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "radius_metres": {
+            "title": "Radius Metres",
+            "type": "number"
+          },
+          "review_candidate_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Review Candidate Ids",
+            "type": "array"
+          },
+          "review_candidates": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewCandidateResponse"
+            },
+            "title": "Review Candidates",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ClusteringStatus"
+          }
+        },
+        "required": [
+          "incident_id",
+          "status",
+          "category_summary",
+          "priority",
+          "confirmed_report_count",
+          "pending_candidate_count",
+          "centroid",
+          "radius_metres",
+          "earliest_reported_at",
+          "latest_reported_at",
+          "conflict_reasons",
+          "complaint_ids",
+          "review_candidate_ids",
+          "confirmed_edges",
+          "review_candidates"
+        ],
+        "title": "IncidentDetailResponse",
+        "type": "object"
+      },
+      "IncidentListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentSummaryResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "total"
+        ],
+        "title": "IncidentListResponse",
+        "type": "object"
+      },
+      "IncidentSummaryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "category_summary": {
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            },
+            "title": "Category Summary",
+            "type": "array"
+          },
+          "centroid": {
+            "$ref": "#/components/schemas/GeoPointResponse"
+          },
+          "confirmed_report_count": {
+            "title": "Confirmed Report Count",
+            "type": "integer"
+          },
+          "conflict_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Conflict Reasons",
+            "type": "array"
+          },
+          "earliest_reported_at": {
+            "format": "date-time",
+            "title": "Earliest Reported At",
+            "type": "string"
+          },
+          "incident_id": {
+            "format": "uuid",
+            "title": "Incident Id",
+            "type": "string"
+          },
+          "latest_reported_at": {
+            "format": "date-time",
+            "title": "Latest Reported At",
+            "type": "string"
+          },
+          "pending_candidate_count": {
+            "title": "Pending Candidate Count",
+            "type": "integer"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PriorityResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "radius_metres": {
+            "title": "Radius Metres",
+            "type": "number"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ClusteringStatus"
+          }
+        },
+        "required": [
+          "incident_id",
+          "status",
+          "category_summary",
+          "priority",
+          "confirmed_report_count",
+          "pending_candidate_count",
+          "centroid",
+          "radius_metres",
+          "earliest_reported_at",
+          "latest_reported_at",
+          "conflict_reasons"
+        ],
+        "title": "IncidentSummaryResponse",
+        "type": "object"
+      },
+      "IncidentTransitionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "current_incident_snapshot_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Current Incident Snapshot Ids",
+            "type": "array"
+          },
+          "previous_incident_snapshot_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Previous Incident Snapshot Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "previous_incident_snapshot_ids",
+          "current_incident_snapshot_ids"
+        ],
+        "title": "IncidentTransitionResponse",
+        "type": "object"
+      },
+      "JsonScalar": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "LiveResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "const": "alive",
+            "default": "alive",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "LiveResponse",
+        "type": "object"
+      },
+      "LocationCompatibility": {
+        "enum": [
+          "compatible",
+          "conflicting",
+          "unknown"
+        ],
+        "title": "LocationCompatibility",
+        "type": "string"
+      },
+      "LocationEntityKind": {
+        "enum": [
+          "block",
+          "unit",
+          "street",
+          "landmark"
+        ],
+        "title": "LocationEntityKind",
+        "type": "string"
+      },
+      "LocationEntityResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/LocationEntityKind"
+          },
+          "raw": {
+            "title": "Raw",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "value",
+          "raw"
+        ],
+        "title": "LocationEntityResponse",
+        "type": "object"
+      },
+      "MatchState": {
+        "enum": [
+          "auto_match",
+          "no_match",
+          "review_required"
+        ],
+        "title": "MatchState",
+        "type": "string"
+      },
+      "PriorityLevel": {
+        "enum": [
+          "critical",
+          "high",
+          "medium",
+          "low",
+          "review_required"
+        ],
+        "title": "PriorityLevel",
+        "type": "string"
+      },
+      "PriorityResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "$ref": "#/components/schemas/PriorityLevel"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "level",
+          "reasons",
+          "policy_version"
+        ],
+        "title": "PriorityResponse",
+        "type": "object"
+      },
+      "RelationshipDecisionSource": {
+        "enum": [
+          "automated",
+          "officer_review"
+        ],
+        "title": "RelationshipDecisionSource",
+        "type": "string"
+      },
+      "RelationshipEdgeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "$ref": "#/components/schemas/MatchState"
+          },
+          "decision_source": {
+            "$ref": "#/components/schemas/RelationshipDecisionSource"
+          },
+          "left_id": {
+            "format": "uuid",
+            "title": "Left Id",
+            "type": "string"
+          },
+          "matcher_recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MatchState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "right_id": {
+            "format": "uuid",
+            "title": "Right Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "left_id",
+          "right_id",
+          "decision",
+          "reasons",
+          "decision_source",
+          "matcher_recommendation"
+        ],
+        "title": "RelationshipEdgeResponse",
+        "type": "object"
+      },
+      "ReviewCandidateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "$ref": "#/components/schemas/MatchState"
+          },
+          "decision_source": {
+            "$ref": "#/components/schemas/RelationshipDecisionSource"
+          },
+          "left_id": {
+            "format": "uuid",
+            "title": "Left Id",
+            "type": "string"
+          },
+          "matcher_recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MatchState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "right_id": {
+            "format": "uuid",
+            "title": "Right Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "left_id",
+          "right_id",
+          "decision",
+          "reasons",
+          "decision_source",
+          "matcher_recommendation"
+        ],
+        "title": "ReviewCandidateResponse",
+        "type": "object"
+      },
+      "ReviewDetailResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "complaint_a": {
+            "$ref": "#/components/schemas/ComplaintResponse"
+          },
+          "complaint_b": {
+            "$ref": "#/components/schemas/ComplaintResponse"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decision_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RelationshipDecisionSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "final_relationship_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MatchState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "graph_version": {
+            "title": "Graph Version",
+            "type": "string"
+          },
+          "matcher_evidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewEvidenceResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "matcher_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Matcher Reasons",
+            "type": "array"
+          },
+          "new_incident_snapshot_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "New Incident Snapshot Ids",
+            "type": "array"
+          },
+          "original_matcher_recommendation": {
+            "$ref": "#/components/schemas/MatchState"
+          },
+          "previous_incident_snapshot_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Previous Incident Snapshot Ids",
+            "type": "array"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "review_id": {
+            "format": "uuid",
+            "title": "Review Id",
+            "type": "string"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
+          },
+          "reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          }
+        },
+        "required": [
+          "review_id",
+          "status",
+          "complaint_a",
+          "complaint_b",
+          "original_matcher_recommendation",
+          "matcher_reasons",
+          "matcher_evidence",
+          "created_at",
+          "resolved_at",
+          "reviewer_id",
+          "review_note",
+          "final_relationship_state",
+          "decision_source",
+          "graph_version",
+          "previous_incident_snapshot_ids",
+          "new_incident_snapshot_ids"
+        ],
+        "title": "ReviewDetailResponse",
+        "type": "object"
+      },
+      "ReviewEvidenceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "category_compatibility": {
+            "title": "Category Compatibility",
+            "type": "boolean"
+          },
+          "first_location_entities": {
+            "items": {
+              "$ref": "#/components/schemas/LocationEntityResponse"
+            },
+            "title": "First Location Entities",
+            "type": "array"
+          },
+          "geo_distance_metres": {
+            "title": "Geo Distance Metres",
+            "type": "number"
+          },
+          "location_compatibility": {
+            "$ref": "#/components/schemas/LocationCompatibility"
+          },
+          "second_location_entities": {
+            "items": {
+              "$ref": "#/components/schemas/LocationEntityResponse"
+            },
+            "title": "Second Location Entities",
+            "type": "array"
+          },
+          "semantic_similarity": {
+            "title": "Semantic Similarity",
+            "type": "number"
+          },
+          "time_difference_seconds": {
+            "title": "Time Difference Seconds",
+            "type": "number"
+          }
+        },
+        "required": [
+          "semantic_similarity",
+          "geo_distance_metres",
+          "time_difference_seconds",
+          "category_compatibility",
+          "location_compatibility",
+          "first_location_entities",
+          "second_location_entities"
+        ],
+        "title": "ReviewEvidenceResponse",
+        "type": "object"
+      },
+      "ReviewListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewSummaryResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "total"
+        ],
+        "title": "ReviewListResponse",
+        "type": "object"
+      },
+      "ReviewMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "affected_complaint_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Affected Complaint Ids",
+            "type": "array"
+          },
+          "affected_incidents": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentSummaryResponse"
+            },
+            "title": "Affected Incidents",
+            "type": "array"
+          },
+          "conflict_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClusteringStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "final_relationship_state": {
+            "$ref": "#/components/schemas/MatchState"
+          },
+          "new_incident_snapshot_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "New Incident Snapshot Ids",
+            "type": "array"
+          },
+          "previous_incident_snapshot_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Previous Incident Snapshot Ids",
+            "type": "array"
+          },
+          "resulting_priorities": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PriorityResponse"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Resulting Priorities",
+            "type": "array"
+          },
+          "review": {
+            "$ref": "#/components/schemas/ReviewDetailResponse"
+          }
+        },
+        "required": [
+          "review",
+          "final_relationship_state",
+          "affected_complaint_ids",
+          "previous_incident_snapshot_ids",
+          "new_incident_snapshot_ids",
+          "affected_incidents",
+          "resulting_priorities",
+          "conflict_status"
+        ],
+        "title": "ReviewMutationResponse",
+        "type": "object"
+      },
+      "ReviewResolutionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reviewer_id": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Reviewer Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reviewer_id"
+        ],
+        "title": "ReviewResolutionRequest",
+        "type": "object"
+      },
+      "ReviewStatus": {
+        "enum": [
+          "pending",
+          "approved",
+          "rejected"
+        ],
+        "title": "ReviewStatus",
+        "type": "string"
+      },
+      "ReviewSummaryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decision_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RelationshipDecisionSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "final_relationship_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MatchState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "graph_version": {
+            "title": "Graph Version",
+            "type": "string"
+          },
+          "left_complaint_id": {
+            "format": "uuid",
+            "title": "Left Complaint Id",
+            "type": "string"
+          },
+          "matcher_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Matcher Reasons",
+            "type": "array"
+          },
+          "original_matcher_recommendation": {
+            "$ref": "#/components/schemas/MatchState"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "review_id": {
+            "format": "uuid",
+            "title": "Review Id",
+            "type": "string"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
+          },
+          "reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Id"
+          },
+          "right_complaint_id": {
+            "format": "uuid",
+            "title": "Right Complaint Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          }
+        },
+        "required": [
+          "review_id",
+          "left_complaint_id",
+          "right_complaint_id",
+          "original_matcher_recommendation",
+          "matcher_reasons",
+          "status",
+          "created_at",
+          "resolved_at",
+          "reviewer_id",
+          "review_note",
+          "final_relationship_state",
+          "decision_source",
+          "graph_version"
+        ],
+        "title": "ReviewSummaryResponse",
+        "type": "object"
+      },
+      "SeedResetResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "complaint_count": {
+            "title": "Complaint Count",
+            "type": "integer"
+          },
+          "incident_count": {
+            "title": "Incident Count",
+            "type": "integer"
+          },
+          "priority_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Priority Counts",
+            "type": "object"
+          },
+          "review_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Review Counts",
+            "type": "object"
+          },
+          "seed_checksum": {
+            "title": "Seed Checksum",
+            "type": "string"
+          },
+          "seed_version": {
+            "title": "Seed Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seed_version",
+          "seed_checksum",
+          "complaint_count",
+          "incident_count",
+          "review_counts",
+          "priority_counts"
+        ],
+        "title": "SeedResetResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "CivicPulse-lite API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/admin/reset": {
+      "post": {
+        "description": "Admin operation: restore the server-configured demo seed; disabled by default.",
+        "operationId": "adminReset",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeedResetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Administrative reset is disabled."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Seed configuration is unavailable."
+          }
+        },
+        "summary": "Reset Seed",
+        "tags": [
+          "mutations"
+        ]
+      }
+    },
+    "/api/v1/complaints": {
+      "post": {
+        "description": "Submit a complaint through the application mutation service.",
+        "operationId": "complaintsCreate",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComplaintCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplaintSubmissionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Idempotency conflict."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error."
+          }
+        },
+        "summary": "Submit Complaint",
+        "tags": [
+          "mutations"
+        ]
+      }
+    },
+    "/api/v1/health/live": {
+      "get": {
+        "operationId": "healthLive",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Live",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "operationId": "healthReady",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Ready",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/incidents": {
+      "get": {
+        "description": "List derived incident snapshots. Incident IDs identify the current membership-derived snapshot and may change when confirmed membership changes.",
+        "operationId": "incidentsList",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Category"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priority",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PriorityLevel"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ClusteringStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Incidents",
+        "tags": [
+          "incidents"
+        ]
+      }
+    },
+    "/api/v1/incidents/{incident_id}": {
+      "get": {
+        "description": "Read a derived incident snapshot. Incident IDs identify the current membership-derived snapshot and may change when confirmed membership changes.",
+        "operationId": "incidentDetail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Incident Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Incident",
+        "tags": [
+          "incidents"
+        ]
+      }
+    },
+    "/api/v1/reviews": {
+      "get": {
+        "operationId": "reviewsList",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ReviewStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          }
+        },
+        "summary": "List Reviews",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/reviews/{review_id}": {
+      "get": {
+        "operationId": "reviewDetail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "review_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Review Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Review not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          }
+        },
+        "summary": "Get Review",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/reviews/{review_id}/approve": {
+      "post": {
+        "operationId": "reviewApprove",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "review_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Review Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewResolutionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewMutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Review not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Review cannot be resolved."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error."
+          }
+        },
+        "summary": "Approve Review",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/reviews/{review_id}/reject": {
+      "post": {
+        "operationId": "reviewReject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "review_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Review Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewResolutionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewMutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Review not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Review cannot be resolved."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error."
+          }
+        },
+        "summary": "Reject Review",
+        "tags": [
+          "reviews"
+        ]
+      }
+    }
+  }
+}
