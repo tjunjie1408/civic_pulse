@@ -13,6 +13,8 @@ from pydantic import ValidationError
 from civicpulse_dashboard.api_errors import DashboardApiError
 from civicpulse_dashboard.api_models import (
     ApiErrorResponse,
+    ComplaintCreateRequest,
+    ComplaintSubmissionResponse,
     HealthResponse,
     IncidentDetailResponse,
     IncidentListResponse,
@@ -94,6 +96,18 @@ class ApiClient:
     def get_review(self, review_id: str) -> ReviewDetailResponse:
         return self._get_model(f"/reviews/{review_id}", model=ReviewDetailResponse)
 
+    def submit_complaint(
+        self,
+        request: ComplaintCreateRequest,
+        idempotency_key: str,
+    ) -> ComplaintSubmissionResponse:
+        return self._post_model(
+            "/complaints",
+            json=request.model_dump(mode="json"),
+            headers={"Idempotency-Key": idempotency_key},
+            model=ComplaintSubmissionResponse,
+        )
+
     def health_ready(self) -> HealthResponse:
         return self._get_model("/health/ready", model=HealthResponse)
 
@@ -117,15 +131,41 @@ class ApiClient:
                 status_code=response.status_code,
             ) from exc
 
+    def _post_model[T: Any](
+        self,
+        path: str,
+        *,
+        json: object,
+        headers: Mapping[str, str],
+        model: type[T],
+    ) -> T:
+        response = self._request("POST", path, json=json, headers=headers)
+        try:
+            return model.model_validate(response.json())
+        except (ValidationError, ValueError, TypeError) as exc:
+            raise DashboardApiError(
+                code="api_contract_error",
+                message="The API response did not match the frozen contract.",
+                status_code=response.status_code,
+            ) from exc
+
     def _request(
         self,
         method: str,
         path: str,
         *,
         params: Mapping[str, str | int] | None = None,
+        json: object | None = None,
+        headers: Mapping[str, str] | None = None,
     ) -> httpx.Response:
         try:
-            response = self._client.request(method, path, params=params)
+            response = self._client.request(
+                method,
+                path,
+                params=params,
+                json=json,
+                headers=headers,
+            )
         except httpx.TimeoutException as exc:
             raise DashboardApiError(
                 code="api_unreachable",

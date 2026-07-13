@@ -6,11 +6,11 @@ dashboard is a client of the HTTP API, not another application-service layer.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 type Category = Literal[
     "pothole",
@@ -56,6 +56,22 @@ class ComplaintResponse(DashboardModel):
     longitude: float
     reported_at: datetime
     photo_path: str | None = None
+
+
+class ComplaintCreateRequest(DashboardModel):
+    text: str = Field(min_length=3, max_length=2000)
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    reported_at: datetime
+    category: Category | None = None
+    photo_path: str | None = None
+
+    @field_validator("reported_at")
+    @classmethod
+    def normalize_reported_at(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("reported_at must include a timezone")
+        return value.astimezone(UTC)
 
 
 class LocationEntityResponse(DashboardModel):
@@ -155,6 +171,21 @@ class IncidentListResponse(DashboardModel):
     limit: int
     offset: int
     total: int
+
+
+class IncidentTransitionResponse(DashboardModel):
+    previous_incident_snapshot_ids: list[UUID]
+    current_incident_snapshot_ids: list[UUID]
+
+
+class ComplaintSubmissionResponse(DashboardModel):
+    complaint: ComplaintResponse
+    created: bool
+    replayed: bool
+    relationship_decisions: list[RelationshipEdgeResponse]
+    incident_transition: IncidentTransitionResponse
+    incidents: list[IncidentSummaryResponse]
+    priorities: list[PriorityResponse | None]
 
 
 class ApiErrorBody(DashboardModel):

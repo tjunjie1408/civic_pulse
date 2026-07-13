@@ -6,32 +6,12 @@ import json
 from hashlib import sha256
 from pathlib import Path
 
+from civicpulse.demo_seed import build_seed_complaints
 from civicpulse.service import SeedComplaint
 
 
 def main() -> None:
-    categories = (
-        ("pothole", "Pothole at Block {block} Jalan Ampang"),
-        ("blocked_drain", "Longkang tersumbat dekat sekolah block {block}"),
-        ("flooding", "Air naik near school after rain block {block}"),
-        ("rubbish", "Sampah tidak dikutip at Taman Melur block {block}"),
-        ("street_light", "Lampu jalan rosak near Block {block} Jalan Ampang"),
-    )
-    hotspots = ((3.1390, 101.6869), (3.1450, 101.6900), (3.1510, 101.6940))
-    complaints: list[dict[str, object]] = []
-    for index in range(120):
-        category, template = categories[index % len(categories)]
-        hotspot = hotspots[(index // 5) % len(hotspots)]
-        complaints.append(
-            {
-                "seed_key": f"complaint-{index:03d}",
-                "text": template.format(block=chr(65 + (index % 4))),
-                "latitude": hotspot[0] + (index % 5) * 0.0002,
-                "longitude": hotspot[1] + (index % 4) * 0.0002,
-                "reported_at": "2026-07-10T08:00:00Z",
-                "category": category,
-            }
-        )
+    complaints = build_seed_complaints()
     ordered = sorted(complaints, key=lambda item: str(item["seed_key"]))
     canonical = {
         "complaints": [
@@ -44,7 +24,7 @@ def main() -> None:
     ).encode("utf-8")
     payload = {
         "manifest": {
-            "seed_version": "1.0.0",
+            "seed_version": "shah-alam-demo-v1",
             "content_sha256": sha256(content).hexdigest(),
             "normalization_version": "normalization-v1",
             "embedding_model": "intfloat/multilingual-e5-small",
