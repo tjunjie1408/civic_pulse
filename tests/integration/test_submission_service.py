@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import pytest
 
 from civicpulse.config import load_matching_policy, load_priority_policy
-from civicpulse.domain import Category, ComplaintInput, MatchState
+from civicpulse.domain import Category, ComplaintInput, MatchState, ReviewStatus
 from civicpulse.repository import SQLiteRepository
 from civicpulse.service import CivicPulseService, IdempotencyConflict
 
@@ -114,3 +114,36 @@ def test_idempotency_replay_preserves_original_transition_after_restart(tmp_path
     assert replay.current_incident_ids == first.current_incident_ids
     assert replay.incident == first.incident
     assert len(repository.list_complaints()) == 1
+
+
+def test_review_resolution_preserves_original_matcher_evidence(tmp_path):
+    application, repository = service(tmp_path)
+    first = application.submit_complaint(payload("Pothole at Block A Jalan Ampang"), "one", now=NOW)
+    application.submit_complaint(payload("Pothole near school", category=Category.POTHOLE), "two", now=NOW)
+    stored = repository.list_reviews()[0]
+
+    result = application.resolve_review(stored.review_id, approve=True, reviewer_id="demo-officer", now=NOW)
+
+    assert stored.status is ReviewStatus.PENDING
+    assert stored.matcher_evidence is not None
+    assert result.review.status is ReviewStatus.APPROVED
+    assert result.review.matcher_evidence == stored.matcher_evidence
+    assert result.previous_incident_ids
+    assert result.new_incident_ids
+    assert first.complaint.id in result.affected_complaint_ids
+
+
+def test_resolved_review_persists_across_application_restart(tmp_path):
+    application, repository = service(tmp_path)
+    application.submit_complaint(payload("Pothole at Block A Jalan Ampang"), "one", now=NOW)
+    application.submit_complaint(payload("Pothole near school", category=Category.POTHOLE), "two", now=NOW)
+    stored = repository.list_reviews()[0]
+    application.resolve_review(stored.review_id, approve=False, reviewer_id="demo-officer", now=NOW)
+
+    restarted, _ = service(tmp_path)
+    read = restarted.get_review(stored.review_id)
+
+    assert read is not None
+    assert read.review.status is ReviewStatus.REJECTED
+    assert read.review.resolved_at == NOW
+    assert read.review.matcher_evidence == stored.matcher_evidence

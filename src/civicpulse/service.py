@@ -27,6 +27,7 @@ from civicpulse.domain import (
     ReviewStatus,
     PriorityAssessment,
     ReviewResolution,
+    ReviewRead,
     SubmissionResult,
     SensitiveLocation,
     StrictModel,
@@ -81,6 +82,18 @@ class SeedResult(StrictModel):
 
 class IdempotencyConflict(ValueError):
     """Raised when a key is reused with a different normalized request."""
+
+
+class ReviewNotFound(ValueError):
+    """Raised when a review identifier does not exist."""
+
+
+class ReviewAlreadyResolved(ValueError):
+    """Raised when a resolved review is submitted for another decision."""
+
+
+class ReviewStale(ValueError):
+    """Raised when a review was created against an obsolete graph version."""
 
 
 class HealthStatus(StrEnum):
@@ -318,6 +331,8 @@ class CivicPulseService:
             decision=decision,
             decision_source=RelationshipDecisionSource.OFFICER_REVIEW,
             matcher_recommendation=MatchState.REVIEW_REQUIRED,
+            # Keep the automated decision as immutable evidence after resolution.
+            matcher_evidence=relationship.decision,
         )
 
     def _apply_review_overrides(
@@ -379,6 +394,29 @@ class CivicPulseService:
 
     def reset_seed(self, path: str | Path) -> SeedResult:
         return self._import_seed(path)
+
+    def get_review(self, review_id: UUID) -> ReviewRead | None:
+        review = self.repository.get_review(review_id)
+        if review is None:
+            return None
+        complaints = {item.id: item for item in self.repository.list_complaints()}
+        left = complaints.get(review.left_id)
+        right = complaints.get(review.right_id)
+        if left is None or right is None:
+            raise RuntimeError("review references a missing complaint")
+        return ReviewRead(review=review, complaint_a=left, complaint_b=right)
+
+    def list_reviews(self, status: ReviewStatus | None = None) -> list[ReviewRead]:
+        reviews = self.repository.list_reviews(status)
+        complaints = {item.id: item for item in self.repository.list_complaints()}
+        views: list[ReviewRead] = []
+        for review in reviews:
+            left = complaints.get(review.left_id)
+            right = complaints.get(review.right_id)
+            if left is None or right is None:
+                raise RuntimeError("review references a missing complaint")
+            views.append(ReviewRead(review=review, complaint_a=left, complaint_b=right))
+        return views
 
     def _import_seed(self, path: str | Path) -> SeedResult:
         manifest, records, resolutions = self._load_seed(path)
@@ -451,6 +489,7 @@ class CivicPulseService:
                     right_id=pair[1],
                     matcher_recommendation=MatchState.REVIEW_REQUIRED,
                     matcher_reasons=edge.reasons,
+                    matcher_evidence=edge.matcher_evidence,
                     status=ReviewStatus.APPROVED if resolution and resolution.final_state is MatchState.AUTO_MATCH else ReviewStatus.REJECTED if resolution else ReviewStatus.PENDING,
                     created_at=created_at,
                     resolved_at=created_at if resolution else None,
@@ -595,14 +634,16 @@ class CivicPulseService:
     ) -> ReviewResolution:
         review = self.repository.get_review(review_id)
         if review is None:
-            raise ValueError("unknown review")
+            raise ReviewNotFound("unknown review")
         if review.status is not ReviewStatus.PENDING:
-            raise ValueError("review is not pending")
+            raise ReviewAlreadyResolved("review is not pending")
         final_state = MatchState.AUTO_MATCH if approve else MatchState.NO_MATCH
         previous_incidents = self.repository.list_incidents()
         complaints = self.repository.list_complaints()
         vectors = self.embedding_provider.embed([item.normalized_text for item in complaints])
         relationships = self._relationships(complaints, vectors)
+        if self._graph_version(relationships) != review.graph_version_at_creation:
+            raise ReviewStale("review graph is stale")
         relationships = self._apply_review_overrides(relationships, review_id, final_state)
         incidents = build_incidents(complaints, relationships)
         clock = now or datetime.now(timezone.utc)
@@ -614,7 +655,7 @@ class CivicPulseService:
             assess_priority(incident, complaints, self.sensitive_locations, self.priority_policy, clock)
             for incident in affected_incidents
         )
-        self.repository.apply_review_resolution(
+        resolved_review = self.repository.apply_review_resolution(
             review_id,
             final_state,
             reviewer_id,
@@ -646,4 +687,6 @@ class CivicPulseService:
             resulting_priorities=priorities,
             reviewer_id=reviewer_id,
             note=note,
+            review=resolved_review,
+            affected_incidents=affected_incidents,
         )

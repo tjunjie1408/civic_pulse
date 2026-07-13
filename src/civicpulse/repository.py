@@ -18,6 +18,7 @@ from civicpulse.domain import (
     Category,
     Complaint,
     Incident,
+    MatchDecision,
     RelationshipDecisionSource,
     RelationshipEdge,
     ReviewRecord,
@@ -126,6 +127,7 @@ class SQLiteRepository:
                         right_id TEXT NOT NULL REFERENCES complaints(id) ON DELETE CASCADE,
                         matcher_recommendation TEXT NOT NULL CHECK(matcher_recommendation='review_required'),
                         matcher_reasons TEXT NOT NULL,
+                        matcher_evidence TEXT,
                         status TEXT NOT NULL CHECK(status IN ('pending','approved','rejected')),
                         created_at TEXT NOT NULL,
                         resolved_at TEXT,
@@ -147,6 +149,12 @@ class SQLiteRepository:
                     connection.execute("ALTER TABLE submission_keys ADD COLUMN request_fingerprint TEXT")
                 if "result_payload" not in columns:
                     connection.execute("ALTER TABLE submission_keys ADD COLUMN result_payload TEXT")
+                review_columns = {
+                    row["name"]
+                    for row in connection.execute("PRAGMA table_info(reviews)").fetchall()
+                }
+                if "matcher_evidence" not in review_columns:
+                    connection.execute("ALTER TABLE reviews ADD COLUMN matcher_evidence TEXT")
                 connection.commit()
             except Exception:
                 connection.rollback()
@@ -365,6 +373,11 @@ class SQLiteRepository:
             right_id=UUID(row["right_id"]),
             matcher_recommendation=MatchState(row["matcher_recommendation"]),
             matcher_reasons=tuple(json.loads(row["matcher_reasons"])),
+            matcher_evidence=(
+                MatchDecision.model_validate_json(row["matcher_evidence"])
+                if row["matcher_evidence"]
+                else None
+            ),
             status=ReviewStatus(row["status"]),
             created_at=datetime.fromisoformat(row["created_at"]),
             resolved_at=datetime.fromisoformat(row["resolved_at"]) if row["resolved_at"] else None,
@@ -388,13 +401,14 @@ class SQLiteRepository:
             connection.execute("BEGIN IMMEDIATE")
             try:
                 connection.execute(
-                    "INSERT OR IGNORE INTO reviews(review_id,left_id,right_id,matcher_recommendation,matcher_reasons,status,created_at,graph_version_at_creation,version) VALUES(?,?,?,?,?,?,?,?,?)",
+                    "INSERT OR IGNORE INTO reviews(review_id,left_id,right_id,matcher_recommendation,matcher_reasons,matcher_evidence,status,created_at,graph_version_at_creation,version) VALUES(?,?,?,?,?,?,?,?,?,?)",
                     (
                         str(review_id),
                         str(edge.left_id),
                         str(edge.right_id),
                         MatchState.REVIEW_REQUIRED.value,
                         json.dumps(list(edge.reasons)),
+                        edge.matcher_evidence.model_dump_json() if edge.matcher_evidence else None,
                         ReviewStatus.PENDING.value,
                         created_at.isoformat(),
                         graph_version,
@@ -513,8 +527,8 @@ class SQLiteRepository:
                 self._replace_incidents_in_connection(connection, incident_list)
                 for review in review_list:
                     connection.execute(
-                        "INSERT INTO reviews(review_id,left_id,right_id,matcher_recommendation,matcher_reasons,status,created_at,resolved_at,reviewed_by,review_note,final_relationship_state,decision_source,graph_version_at_creation,version) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                        (str(review.review_id), str(review.left_id), str(review.right_id), review.matcher_recommendation.value, json.dumps(list(review.matcher_reasons)), review.status.value, review.created_at.isoformat(), review.resolved_at.isoformat() if review.resolved_at else None, review.reviewed_by, review.review_note, review.final_relationship_state.value if review.final_relationship_state else None, review.decision_source.value if review.decision_source else None, review.graph_version_at_creation, review.version),
+                        "INSERT INTO reviews(review_id,left_id,right_id,matcher_recommendation,matcher_reasons,matcher_evidence,status,created_at,resolved_at,reviewed_by,review_note,final_relationship_state,decision_source,graph_version_at_creation,version) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        (str(review.review_id), str(review.left_id), str(review.right_id), review.matcher_recommendation.value, json.dumps(list(review.matcher_reasons)), review.matcher_evidence.model_dump_json() if review.matcher_evidence else None, review.status.value, review.created_at.isoformat(), review.resolved_at.isoformat() if review.resolved_at else None, review.reviewed_by, review.review_note, review.final_relationship_state.value if review.final_relationship_state else None, review.decision_source.value if review.decision_source else None, review.graph_version_at_creation, review.version),
                     )
                 connection.commit()
             except Exception:

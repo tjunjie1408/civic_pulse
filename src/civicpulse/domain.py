@@ -157,6 +157,7 @@ class RelationshipEdge(StrictModel):
     reasons: tuple[str, ...] = Field(min_length=1)
     decision_source: RelationshipDecisionSource = RelationshipDecisionSource.AUTOMATED
     matcher_recommendation: MatchState | None = None
+    matcher_evidence: MatchDecision | None = None
 
 
 class Incident(StrictModel):
@@ -249,6 +250,7 @@ class ReviewRecord(StrictModel):
     right_id: UUID
     matcher_recommendation: MatchState
     matcher_reasons: tuple[str, ...] = Field(min_length=1)
+    matcher_evidence: MatchDecision | None = None
     status: ReviewStatus
     created_at: datetime
     resolved_at: datetime | None = None
@@ -258,6 +260,12 @@ class ReviewRecord(StrictModel):
     decision_source: RelationshipDecisionSource | None = None
     graph_version_at_creation: str = Field(min_length=1)
     version: int = Field(ge=1)
+
+
+class ReviewRead(StrictModel):
+    review: ReviewRecord
+    complaint_a: Complaint
+    complaint_b: Complaint
 
 
 class ReviewResolution(StrictModel):
@@ -272,6 +280,8 @@ class ReviewResolution(StrictModel):
     resulting_priorities: tuple[PriorityAssessment, ...]
     reviewer_id: str = Field(min_length=1)
     note: str | None = None
+    review: ReviewRecord | None = None
+    affected_incidents: tuple[Incident, ...] = ()
 
 
 class PhotoAssessment(StrictModel):

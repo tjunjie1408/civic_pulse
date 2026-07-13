@@ -33,6 +33,7 @@ class ClusteringRelationship(StrictModel):
     decision: MatchDecision
     decision_source: RelationshipDecisionSource = RelationshipDecisionSource.AUTOMATED
     matcher_recommendation: MatchState | None = None
+    matcher_evidence: MatchDecision | None = None
 
 
 class _DisjointSet:
@@ -65,6 +66,7 @@ def _edge(relationship: ClusteringRelationship) -> RelationshipEdge:
         reasons=relationship.decision.reasons,
         decision_source=relationship.decision_source,
         matcher_recommendation=relationship.matcher_recommendation or relationship.decision.matcher_recommendation,
+        matcher_evidence=relationship.decision,
     )
 
 
