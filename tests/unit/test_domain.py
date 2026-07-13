@@ -12,6 +12,9 @@ from civicpulse.domain import (
     LocationCompatibility,
     MatchDecision,
     MatchState,
+    Incident,
+    ClusteringStatus,
+    RelationshipEdge,
 )
 
 
@@ -80,4 +83,30 @@ def test_match_decision_rejects_invalid_similarity_and_distance():
             time_gap_seconds=0,
             semantic_similarity=1.1,
             reasons=("category mismatch",),
+        )
+
+
+def test_incident_candidate_ids_must_match_candidate_edges():
+    with pytest.raises(ValidationError, match="review_candidate_ids"):
+        Incident(
+            incident_id=UUID("10000000-0000-0000-0000-000000000001"),
+            complaint_ids=(UUID("00000000-0000-0000-0000-000000000001"),),
+            report_count=1,
+            confirmed_edges=(),
+            review_candidate_ids=(),
+            review_candidates=(
+                RelationshipEdge(
+                    left_id=UUID("00000000-0000-0000-0000-000000000001"),
+                    right_id=UUID("00000000-0000-0000-0000-000000000002"),
+                    decision=MatchState.REVIEW_REQUIRED,
+                    reasons=("ambiguous",),
+                ),
+            ),
+            centroid_latitude=3.139,
+            centroid_longitude=101.687,
+            radius_metres=0,
+            earliest_reported_at=datetime.now(timezone.utc),
+            latest_reported_at=datetime.now(timezone.utc),
+            category_summary=(Category.POTHOLE,),
+            status=ClusteringStatus.ISOLATED,
         )

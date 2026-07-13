@@ -7,7 +7,7 @@ from enum import StrEnum
 from typing import Annotated
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 Latitude = Annotated[float, Field(ge=-90, le=90, allow_inf_nan=False)]
@@ -51,6 +51,17 @@ class MatchState(StrEnum):
     AUTO_MATCH = "auto_match"
     NO_MATCH = "no_match"
     REVIEW_REQUIRED = "review_required"
+
+
+class RelationshipDecisionSource(StrEnum):
+    AUTOMATED = "automated"
+    OFFICER_REVIEW = "officer_review"
+
+
+class ReviewStatus(StrEnum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
 
 class ClusteringStatus(StrEnum):
@@ -135,6 +146,8 @@ class MatchDecision(StrictModel):
     time_gap_seconds: float = Field(ge=0, allow_inf_nan=False)
     semantic_similarity: Similarity
     reasons: tuple[str, ...] = Field(min_length=1)
+    decision_source: RelationshipDecisionSource = RelationshipDecisionSource.AUTOMATED
+    matcher_recommendation: MatchState | None = None
 
 
 class RelationshipEdge(StrictModel):
@@ -142,6 +155,8 @@ class RelationshipEdge(StrictModel):
     right_id: UUID
     decision: MatchState
     reasons: tuple[str, ...] = Field(min_length=1)
+    decision_source: RelationshipDecisionSource = RelationshipDecisionSource.AUTOMATED
+    matcher_recommendation: MatchState | None = None
 
 
 class Incident(StrictModel):
@@ -159,6 +174,19 @@ class Incident(StrictModel):
     category_summary: tuple[Category, ...] = Field(min_length=1)
     status: ClusteringStatus
     conflict_reasons: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def validate_review_candidate_index(self) -> "Incident":
+        if self.review_candidates:
+            member_ids = set(self.complaint_ids)
+            derived = {
+                edge.right_id if edge.left_id in member_ids else edge.left_id
+                for edge in self.review_candidates
+                if edge.left_id in member_ids or edge.right_id in member_ids
+            }
+            if tuple(sorted(derived, key=str)) != tuple(sorted(self.review_candidate_ids, key=str)):
+                raise ValueError("review_candidate_ids must be derived from review_candidates")
+        return self
 
     @property
     def id(self) -> UUID:
@@ -213,6 +241,37 @@ class PriorityAssessment(StrictModel):
     signals: tuple[PrioritySignal, ...] = Field(min_length=1)
     reasons: tuple[str, ...] = Field(min_length=1)
     policy_version: str = Field(min_length=1)
+
+
+class ReviewRecord(StrictModel):
+    review_id: UUID
+    left_id: UUID
+    right_id: UUID
+    matcher_recommendation: MatchState
+    matcher_reasons: tuple[str, ...] = Field(min_length=1)
+    status: ReviewStatus
+    created_at: datetime
+    resolved_at: datetime | None = None
+    reviewed_by: str | None = None
+    review_note: str | None = None
+    final_relationship_state: MatchState | None = None
+    decision_source: RelationshipDecisionSource | None = None
+    graph_version_at_creation: str = Field(min_length=1)
+    version: int = Field(ge=1)
+
+
+class ReviewResolution(StrictModel):
+    review_id: UUID
+    previous_status: ReviewStatus
+    final_status: ReviewStatus
+    final_relationship_state: MatchState
+    affected_complaint_ids: tuple[UUID, ...] = Field(min_length=1)
+    previous_incident_ids: tuple[UUID, ...]
+    new_incident_ids: tuple[UUID, ...]
+    conflict_status: ClusteringStatus | None = None
+    resulting_priorities: tuple[PriorityAssessment, ...]
+    reviewer_id: str = Field(min_length=1)
+    note: str | None = None
 
 
 class PhotoAssessment(StrictModel):

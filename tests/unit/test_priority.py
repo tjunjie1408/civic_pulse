@@ -107,7 +107,9 @@ def test_review_candidates_do_not_affect_priority():
     without_candidates = assess_priority(incident(members), list(members), [], POLICY, NOW)
 
     assert with_candidates.level is without_candidates.level
+    assert with_candidates.status is without_candidates.status
     assert with_candidates.points == without_candidates.points
+    assert with_candidates.triggered_rules == without_candidates.triggered_rules
     assert with_candidates.confirmed_report_count == 2
     assert with_candidates.pending_candidate_count == 3
 

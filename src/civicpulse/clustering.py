@@ -17,6 +17,7 @@ from civicpulse.domain import (
     Complaint,
     Incident,
     MatchDecision,
+    RelationshipDecisionSource,
     MatchState,
     RelationshipEdge,
     StrictModel,
@@ -30,6 +31,8 @@ class ClusteringRelationship(StrictModel):
     left_id: UUID
     right_id: UUID
     decision: MatchDecision
+    decision_source: RelationshipDecisionSource = RelationshipDecisionSource.AUTOMATED
+    matcher_recommendation: MatchState | None = None
 
 
 class _DisjointSet:
@@ -60,6 +63,8 @@ def _edge(relationship: ClusteringRelationship) -> RelationshipEdge:
         right_id=right_id,
         decision=relationship.decision.decision,
         reasons=relationship.decision.reasons,
+        decision_source=relationship.decision_source,
+        matcher_recommendation=relationship.matcher_recommendation or relationship.decision.matcher_recommendation,
     )
 
 

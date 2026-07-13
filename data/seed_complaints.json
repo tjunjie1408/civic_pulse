@@ -1,0 +1,1094 @@
+{
+  "manifest": {
+    "seed_version": "1.0.0",
+    "content_sha256": "8e031661466c81de6f1a05bd6204b4fe98929527c2f38a7d838005826f797ea2",
+    "normalization_version": "normalization-v1",
+    "embedding_model": "intfloat/multilingual-e5-small",
+    "embedding_dimension": 384,
+    "matching_policy_version": "matching-v1",
+    "priority_policy_version": "priority-v1"
+  },
+  "complaints": [
+    {
+      "seed_key": "complaint-000",
+      "text": "Pothole at Block A Jalan Ampang",
+      "latitude": 3.139,
+      "longitude": 101.6869,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-001",
+      "text": "Longkang tersumbat dekat sekolah block B",
+      "latitude": 3.1391999999999998,
+      "longitude": 101.6871,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-002",
+      "text": "Air naik near school after rain block C",
+      "latitude": 3.1393999999999997,
+      "longitude": 101.6873,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-003",
+      "text": "Sampah tidak dikutip at Taman Melur block D",
+      "latitude": 3.1395999999999997,
+      "longitude": 101.6875,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-004",
+      "text": "Lampu jalan rosak near Block A Jalan Ampang",
+      "latitude": 3.1397999999999997,
+      "longitude": 101.6869,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-005",
+      "text": "Pothole at Block B Jalan Ampang",
+      "latitude": 3.145,
+      "longitude": 101.6902,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-006",
+      "text": "Longkang tersumbat dekat sekolah block C",
+      "latitude": 3.1452,
+      "longitude": 101.6904,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-007",
+      "text": "Air naik near school after rain block D",
+      "latitude": 3.1454,
+      "longitude": 101.6906,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-008",
+      "text": "Sampah tidak dikutip at Taman Melur block A",
+      "latitude": 3.1456,
+      "longitude": 101.69,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-009",
+      "text": "Lampu jalan rosak near Block B Jalan Ampang",
+      "latitude": 3.1458,
+      "longitude": 101.6902,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-010",
+      "text": "Pothole at Block C Jalan Ampang",
+      "latitude": 3.151,
+      "longitude": 101.6944,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-011",
+      "text": "Longkang tersumbat dekat sekolah block D",
+      "latitude": 3.1512,
+      "longitude": 101.69460000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-012",
+      "text": "Air naik near school after rain block A",
+      "latitude": 3.1513999999999998,
+      "longitude": 101.694,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-013",
+      "text": "Sampah tidak dikutip at Taman Melur block B",
+      "latitude": 3.1515999999999997,
+      "longitude": 101.69420000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-014",
+      "text": "Lampu jalan rosak near Block C Jalan Ampang",
+      "latitude": 3.1517999999999997,
+      "longitude": 101.6944,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-015",
+      "text": "Pothole at Block D Jalan Ampang",
+      "latitude": 3.139,
+      "longitude": 101.6875,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-016",
+      "text": "Longkang tersumbat dekat sekolah block A",
+      "latitude": 3.1391999999999998,
+      "longitude": 101.6869,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-017",
+      "text": "Air naik near school after rain block B",
+      "latitude": 3.1393999999999997,
+      "longitude": 101.6871,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-018",
+      "text": "Sampah tidak dikutip at Taman Melur block C",
+      "latitude": 3.1395999999999997,
+      "longitude": 101.6873,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-019",
+      "text": "Lampu jalan rosak near Block D Jalan Ampang",
+      "latitude": 3.1397999999999997,
+      "longitude": 101.6875,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-020",
+      "text": "Pothole at Block A Jalan Ampang",
+      "latitude": 3.145,
+      "longitude": 101.69,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-021",
+      "text": "Longkang tersumbat dekat sekolah block B",
+      "latitude": 3.1452,
+      "longitude": 101.6902,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-022",
+      "text": "Air naik near school after rain block C",
+      "latitude": 3.1454,
+      "longitude": 101.6904,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-023",
+      "text": "Sampah tidak dikutip at Taman Melur block D",
+      "latitude": 3.1456,
+      "longitude": 101.6906,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-024",
+      "text": "Lampu jalan rosak near Block A Jalan Ampang",
+      "latitude": 3.1458,
+      "longitude": 101.69,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-025",
+      "text": "Pothole at Block B Jalan Ampang",
+      "latitude": 3.151,
+      "longitude": 101.69420000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-026",
+      "text": "Longkang tersumbat dekat sekolah block C",
+      "latitude": 3.1512,
+      "longitude": 101.6944,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-027",
+      "text": "Air naik near school after rain block D",
+      "latitude": 3.1513999999999998,
+      "longitude": 101.69460000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-028",
+      "text": "Sampah tidak dikutip at Taman Melur block A",
+      "latitude": 3.1515999999999997,
+      "longitude": 101.694,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-029",
+      "text": "Lampu jalan rosak near Block B Jalan Ampang",
+      "latitude": 3.1517999999999997,
+      "longitude": 101.69420000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-030",
+      "text": "Pothole at Block C Jalan Ampang",
+      "latitude": 3.139,
+      "longitude": 101.6873,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-031",
+      "text": "Longkang tersumbat dekat sekolah block D",
+      "latitude": 3.1391999999999998,
+      "longitude": 101.6875,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-032",
+      "text": "Air naik near school after rain block A",
+      "latitude": 3.1393999999999997,
+      "longitude": 101.6869,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-033",
+      "text": "Sampah tidak dikutip at Taman Melur block B",
+      "latitude": 3.1395999999999997,
+      "longitude": 101.6871,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-034",
+      "text": "Lampu jalan rosak near Block C Jalan Ampang",
+      "latitude": 3.1397999999999997,
+      "longitude": 101.6873,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-035",
+      "text": "Pothole at Block D Jalan Ampang",
+      "latitude": 3.145,
+      "longitude": 101.6906,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-036",
+      "text": "Longkang tersumbat dekat sekolah block A",
+      "latitude": 3.1452,
+      "longitude": 101.69,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-037",
+      "text": "Air naik near school after rain block B",
+      "latitude": 3.1454,
+      "longitude": 101.6902,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-038",
+      "text": "Sampah tidak dikutip at Taman Melur block C",
+      "latitude": 3.1456,
+      "longitude": 101.6904,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-039",
+      "text": "Lampu jalan rosak near Block D Jalan Ampang",
+      "latitude": 3.1458,
+      "longitude": 101.6906,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-040",
+      "text": "Pothole at Block A Jalan Ampang",
+      "latitude": 3.151,
+      "longitude": 101.694,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-041",
+      "text": "Longkang tersumbat dekat sekolah block B",
+      "latitude": 3.1512,
+      "longitude": 101.69420000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-042",
+      "text": "Air naik near school after rain block C",
+      "latitude": 3.1513999999999998,
+      "longitude": 101.6944,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-043",
+      "text": "Sampah tidak dikutip at Taman Melur block D",
+      "latitude": 3.1515999999999997,
+      "longitude": 101.69460000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-044",
+      "text": "Lampu jalan rosak near Block A Jalan Ampang",
+      "latitude": 3.1517999999999997,
+      "longitude": 101.694,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-045",
+      "text": "Pothole at Block B Jalan Ampang",
+      "latitude": 3.139,
+      "longitude": 101.6871,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-046",
+      "text": "Longkang tersumbat dekat sekolah block C",
+      "latitude": 3.1391999999999998,
+      "longitude": 101.6873,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-047",
+      "text": "Air naik near school after rain block D",
+      "latitude": 3.1393999999999997,
+      "longitude": 101.6875,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-048",
+      "text": "Sampah tidak dikutip at Taman Melur block A",
+      "latitude": 3.1395999999999997,
+      "longitude": 101.6869,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-049",
+      "text": "Lampu jalan rosak near Block B Jalan Ampang",
+      "latitude": 3.1397999999999997,
+      "longitude": 101.6871,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-050",
+      "text": "Pothole at Block C Jalan Ampang",
+      "latitude": 3.145,
+      "longitude": 101.6904,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-051",
+      "text": "Longkang tersumbat dekat sekolah block D",
+      "latitude": 3.1452,
+      "longitude": 101.6906,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-052",
+      "text": "Air naik near school after rain block A",
+      "latitude": 3.1454,
+      "longitude": 101.69,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-053",
+      "text": "Sampah tidak dikutip at Taman Melur block B",
+      "latitude": 3.1456,
+      "longitude": 101.6902,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-054",
+      "text": "Lampu jalan rosak near Block C Jalan Ampang",
+      "latitude": 3.1458,
+      "longitude": 101.6904,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-055",
+      "text": "Pothole at Block D Jalan Ampang",
+      "latitude": 3.151,
+      "longitude": 101.69460000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-056",
+      "text": "Longkang tersumbat dekat sekolah block A",
+      "latitude": 3.1512,
+      "longitude": 101.694,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-057",
+      "text": "Air naik near school after rain block B",
+      "latitude": 3.1513999999999998,
+      "longitude": 101.69420000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-058",
+      "text": "Sampah tidak dikutip at Taman Melur block C",
+      "latitude": 3.1515999999999997,
+      "longitude": 101.6944,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-059",
+      "text": "Lampu jalan rosak near Block D Jalan Ampang",
+      "latitude": 3.1517999999999997,
+      "longitude": 101.69460000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-060",
+      "text": "Pothole at Block A Jalan Ampang",
+      "latitude": 3.139,
+      "longitude": 101.6869,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-061",
+      "text": "Longkang tersumbat dekat sekolah block B",
+      "latitude": 3.1391999999999998,
+      "longitude": 101.6871,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-062",
+      "text": "Air naik near school after rain block C",
+      "latitude": 3.1393999999999997,
+      "longitude": 101.6873,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-063",
+      "text": "Sampah tidak dikutip at Taman Melur block D",
+      "latitude": 3.1395999999999997,
+      "longitude": 101.6875,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-064",
+      "text": "Lampu jalan rosak near Block A Jalan Ampang",
+      "latitude": 3.1397999999999997,
+      "longitude": 101.6869,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-065",
+      "text": "Pothole at Block B Jalan Ampang",
+      "latitude": 3.145,
+      "longitude": 101.6902,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-066",
+      "text": "Longkang tersumbat dekat sekolah block C",
+      "latitude": 3.1452,
+      "longitude": 101.6904,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-067",
+      "text": "Air naik near school after rain block D",
+      "latitude": 3.1454,
+      "longitude": 101.6906,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-068",
+      "text": "Sampah tidak dikutip at Taman Melur block A",
+      "latitude": 3.1456,
+      "longitude": 101.69,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-069",
+      "text": "Lampu jalan rosak near Block B Jalan Ampang",
+      "latitude": 3.1458,
+      "longitude": 101.6902,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-070",
+      "text": "Pothole at Block C Jalan Ampang",
+      "latitude": 3.151,
+      "longitude": 101.6944,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-071",
+      "text": "Longkang tersumbat dekat sekolah block D",
+      "latitude": 3.1512,
+      "longitude": 101.69460000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-072",
+      "text": "Air naik near school after rain block A",
+      "latitude": 3.1513999999999998,
+      "longitude": 101.694,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-073",
+      "text": "Sampah tidak dikutip at Taman Melur block B",
+      "latitude": 3.1515999999999997,
+      "longitude": 101.69420000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-074",
+      "text": "Lampu jalan rosak near Block C Jalan Ampang",
+      "latitude": 3.1517999999999997,
+      "longitude": 101.6944,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-075",
+      "text": "Pothole at Block D Jalan Ampang",
+      "latitude": 3.139,
+      "longitude": 101.6875,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-076",
+      "text": "Longkang tersumbat dekat sekolah block A",
+      "latitude": 3.1391999999999998,
+      "longitude": 101.6869,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-077",
+      "text": "Air naik near school after rain block B",
+      "latitude": 3.1393999999999997,
+      "longitude": 101.6871,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-078",
+      "text": "Sampah tidak dikutip at Taman Melur block C",
+      "latitude": 3.1395999999999997,
+      "longitude": 101.6873,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-079",
+      "text": "Lampu jalan rosak near Block D Jalan Ampang",
+      "latitude": 3.1397999999999997,
+      "longitude": 101.6875,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-080",
+      "text": "Pothole at Block A Jalan Ampang",
+      "latitude": 3.145,
+      "longitude": 101.69,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-081",
+      "text": "Longkang tersumbat dekat sekolah block B",
+      "latitude": 3.1452,
+      "longitude": 101.6902,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-082",
+      "text": "Air naik near school after rain block C",
+      "latitude": 3.1454,
+      "longitude": 101.6904,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-083",
+      "text": "Sampah tidak dikutip at Taman Melur block D",
+      "latitude": 3.1456,
+      "longitude": 101.6906,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-084",
+      "text": "Lampu jalan rosak near Block A Jalan Ampang",
+      "latitude": 3.1458,
+      "longitude": 101.69,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-085",
+      "text": "Pothole at Block B Jalan Ampang",
+      "latitude": 3.151,
+      "longitude": 101.69420000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-086",
+      "text": "Longkang tersumbat dekat sekolah block C",
+      "latitude": 3.1512,
+      "longitude": 101.6944,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-087",
+      "text": "Air naik near school after rain block D",
+      "latitude": 3.1513999999999998,
+      "longitude": 101.69460000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-088",
+      "text": "Sampah tidak dikutip at Taman Melur block A",
+      "latitude": 3.1515999999999997,
+      "longitude": 101.694,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-089",
+      "text": "Lampu jalan rosak near Block B Jalan Ampang",
+      "latitude": 3.1517999999999997,
+      "longitude": 101.69420000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-090",
+      "text": "Pothole at Block C Jalan Ampang",
+      "latitude": 3.139,
+      "longitude": 101.6873,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-091",
+      "text": "Longkang tersumbat dekat sekolah block D",
+      "latitude": 3.1391999999999998,
+      "longitude": 101.6875,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-092",
+      "text": "Air naik near school after rain block A",
+      "latitude": 3.1393999999999997,
+      "longitude": 101.6869,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-093",
+      "text": "Sampah tidak dikutip at Taman Melur block B",
+      "latitude": 3.1395999999999997,
+      "longitude": 101.6871,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-094",
+      "text": "Lampu jalan rosak near Block C Jalan Ampang",
+      "latitude": 3.1397999999999997,
+      "longitude": 101.6873,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-095",
+      "text": "Pothole at Block D Jalan Ampang",
+      "latitude": 3.145,
+      "longitude": 101.6906,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-096",
+      "text": "Longkang tersumbat dekat sekolah block A",
+      "latitude": 3.1452,
+      "longitude": 101.69,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-097",
+      "text": "Air naik near school after rain block B",
+      "latitude": 3.1454,
+      "longitude": 101.6902,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-098",
+      "text": "Sampah tidak dikutip at Taman Melur block C",
+      "latitude": 3.1456,
+      "longitude": 101.6904,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-099",
+      "text": "Lampu jalan rosak near Block D Jalan Ampang",
+      "latitude": 3.1458,
+      "longitude": 101.6906,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-100",
+      "text": "Pothole at Block A Jalan Ampang",
+      "latitude": 3.151,
+      "longitude": 101.694,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-101",
+      "text": "Longkang tersumbat dekat sekolah block B",
+      "latitude": 3.1512,
+      "longitude": 101.69420000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-102",
+      "text": "Air naik near school after rain block C",
+      "latitude": 3.1513999999999998,
+      "longitude": 101.6944,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-103",
+      "text": "Sampah tidak dikutip at Taman Melur block D",
+      "latitude": 3.1515999999999997,
+      "longitude": 101.69460000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-104",
+      "text": "Lampu jalan rosak near Block A Jalan Ampang",
+      "latitude": 3.1517999999999997,
+      "longitude": 101.694,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-105",
+      "text": "Pothole at Block B Jalan Ampang",
+      "latitude": 3.139,
+      "longitude": 101.6871,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-106",
+      "text": "Longkang tersumbat dekat sekolah block C",
+      "latitude": 3.1391999999999998,
+      "longitude": 101.6873,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-107",
+      "text": "Air naik near school after rain block D",
+      "latitude": 3.1393999999999997,
+      "longitude": 101.6875,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-108",
+      "text": "Sampah tidak dikutip at Taman Melur block A",
+      "latitude": 3.1395999999999997,
+      "longitude": 101.6869,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-109",
+      "text": "Lampu jalan rosak near Block B Jalan Ampang",
+      "latitude": 3.1397999999999997,
+      "longitude": 101.6871,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-110",
+      "text": "Pothole at Block C Jalan Ampang",
+      "latitude": 3.145,
+      "longitude": 101.6904,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-111",
+      "text": "Longkang tersumbat dekat sekolah block D",
+      "latitude": 3.1452,
+      "longitude": 101.6906,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-112",
+      "text": "Air naik near school after rain block A",
+      "latitude": 3.1454,
+      "longitude": 101.69,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-113",
+      "text": "Sampah tidak dikutip at Taman Melur block B",
+      "latitude": 3.1456,
+      "longitude": 101.6902,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-114",
+      "text": "Lampu jalan rosak near Block C Jalan Ampang",
+      "latitude": 3.1458,
+      "longitude": 101.6904,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-115",
+      "text": "Pothole at Block D Jalan Ampang",
+      "latitude": 3.151,
+      "longitude": 101.69460000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "pothole",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-116",
+      "text": "Longkang tersumbat dekat sekolah block A",
+      "latitude": 3.1512,
+      "longitude": 101.694,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "blocked_drain",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-117",
+      "text": "Air naik near school after rain block B",
+      "latitude": 3.1513999999999998,
+      "longitude": 101.69420000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "flooding",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-118",
+      "text": "Sampah tidak dikutip at Taman Melur block C",
+      "latitude": 3.1515999999999997,
+      "longitude": 101.6944,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "rubbish",
+      "photo_path": null
+    },
+    {
+      "seed_key": "complaint-119",
+      "text": "Lampu jalan rosak near Block D Jalan Ampang",
+      "latitude": 3.1517999999999997,
+      "longitude": 101.69460000000001,
+      "reported_at": "2026-07-10T08:00:00Z",
+      "category": "street_light",
+      "photo_path": null
+    }
+  ],
+  "review_resolutions": []
+}
