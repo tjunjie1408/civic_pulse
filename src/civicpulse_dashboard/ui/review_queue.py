@@ -1,12 +1,18 @@
-"""Review queue and read-only review detail view."""
+"""Review queue, matcher evidence, and safe resolution actions."""
 
 from __future__ import annotations
+
+import os
 
 import streamlit as st
 
 from civicpulse_dashboard.api_client import ApiClient
 from civicpulse_dashboard.api_errors import DashboardApiError
-from civicpulse_dashboard.api_models import ReviewListResponse
+from civicpulse_dashboard.api_models import (
+    ReviewDetailResponse,
+    ReviewListResponse,
+    ReviewMutationResponse,
+)
 from civicpulse_dashboard.state import DashboardSessionState
 
 
@@ -25,6 +31,51 @@ def review_rows(page: ReviewListResponse) -> list[dict[str, str]]:
     ]
 
 
+def review_decision_rows(detail: ReviewDetailResponse) -> dict[str, str]:
+    """Keep immutable matcher recommendation separate from officer outcome."""
+
+    return {
+        "original_recommendation": detail.original_matcher_recommendation,
+        "final_relationship_state": detail.final_relationship_state or "pending",
+        "decision_source": detail.decision_source or "matcher",
+        "reviewer_id": detail.reviewer_id or "Unassigned",
+        "resolved_at": detail.resolved_at.isoformat() if detail.resolved_at else "Unresolved",
+        "review_note": detail.review_note or "No note",
+    }
+
+
+def mutation_result_rows(response: ReviewMutationResponse) -> dict[str, object]:
+    """Project API mutation results without deriving a new business decision."""
+
+    is_conflict = response.conflict_status == "conflict"
+    return {
+        "presentation": "warning" if is_conflict else "success",
+        "message": (
+            "Review was recorded, but the resulting incident graph is conflicted."
+            if is_conflict
+            else "Review resolution recorded."
+        ),
+        "priority": "unavailable"
+        if is_conflict or any(priority is None for priority in response.resulting_priorities)
+        else "available",
+        "previous_snapshot_ids": [str(item) for item in response.previous_incident_snapshot_ids],
+        "new_snapshot_ids": [str(item) for item in response.new_incident_snapshot_ids],
+    }
+
+
+def review_error_action(state: DashboardSessionState, error: DashboardApiError) -> str:
+    """Apply only selection metadata for known review errors; never retry a mutation."""
+
+    if error.code == "review_not_found":
+        state.selected_review_id = None
+        return "refresh_queue"
+    if error.code == "review_already_resolved":
+        return "refresh_review"
+    if error.code == "review_stale":
+        return "reload_and_reconfirm"
+    return "no_local_mutation"
+
+
 def render_review_detail(
     client: ApiClient,
     state: DashboardSessionState,
@@ -35,9 +86,10 @@ def render_review_detail(
     try:
         detail = client.get_review(review_id)
     except DashboardApiError as exc:
-        if exc.code == "review_not_found":
-            state.selected_review_id = None
+        review_error_action(state, exc)
         st.error(exc.user_message)
+        if exc.code == "review_stale":
+            st.warning("Reload the latest evidence before confirming this decision again.")
         return
 
     st.subheader("Review evidence")
@@ -75,13 +127,79 @@ def render_review_detail(
         )
 
     if detail.resolved_at is not None:
-        st.write(f"Resolved at: {detail.resolved_at.isoformat()}")
-        st.write(f"Reviewer: {detail.reviewer_id or 'Unknown'}")
-        st.write(f"Final relationship: {detail.final_relationship_state or 'Not recorded'}")
-        if detail.review_note:
-            st.write(f"Review note: {detail.review_note}")
+        rows = review_decision_rows(detail)
+        st.write(f"Resolved at: {rows['resolved_at']}")
+        st.write(f"Reviewer: {rows['reviewer_id']}")
+        st.write(f"Final relationship: {rows['final_relationship_state']}")
+        st.write(f"Decision source: {rows['decision_source']}")
+        st.write(f"Review note: {rows['review_note']}")
     else:
-        st.info("This review is pending. Resolution actions will be added in Task 8.4.")
+        st.info("This review is pending officer resolution.")
+        _render_resolution_actions(client, state, detail)
+
+
+def _render_resolution_actions(
+    client: ApiClient,
+    state: DashboardSessionState,
+    detail: ReviewDetailResponse,
+) -> None:
+    reviewer_id = st.text_input(
+        "Reviewer ID",
+        value=os.getenv("CIVICPULSE_REVIEWER_ID", "demo-officer"),
+        max_chars=120,
+    )
+    note = st.text_area("Review note (optional)", value=state.review_note_draft, max_chars=1000)
+    state.review_note_draft = note
+    approve_confirmed = st.checkbox("I confirm this relationship should be approved.")
+    reject_confirmed = st.checkbox("I confirm this relationship should be rejected.")
+    disabled = state.review_in_progress or not reviewer_id.strip()
+    approve, reject = st.columns(2)
+    with approve:
+        if st.button("Approve relationship", disabled=disabled or not approve_confirmed):
+            _resolve_review(client, state, detail.review_id, reviewer_id, note, approve=True)
+    with reject:
+        if st.button("Reject relationship", disabled=disabled or not reject_confirmed):
+            _resolve_review(client, state, detail.review_id, reviewer_id, note, approve=False)
+
+
+def _resolve_review(
+    client: ApiClient,
+    state: DashboardSessionState,
+    review_id: object,
+    reviewer_id: str,
+    note: str,
+    *,
+    approve: bool,
+) -> None:
+    state.review_in_progress = True
+    try:
+        resolver = client.approve_review if approve else client.reject_review
+        response = resolver(str(review_id), reviewer_id, note or None)
+    except DashboardApiError as exc:
+        review_error_action(state, exc)
+        st.error(exc.user_message)
+        if exc.code == "review_stale":
+            st.warning("The note was kept. Reload the evidence and confirm again.")
+        return
+    finally:
+        state.review_in_progress = False
+
+    state.apply_review_transition(
+        review_id=str(response.review.review_id),
+        previous_ids=[str(item) for item in response.previous_incident_snapshot_ids],
+        current_ids=[str(item) for item in response.new_incident_snapshot_ids],
+        final_relationship_state=response.final_relationship_state,
+        conflict_status=response.conflict_status,
+    )
+    state.review_note_draft = ""
+    rows = mutation_result_rows(response)
+    if rows["presentation"] == "warning":
+        st.warning(str(rows["message"]))
+        st.write("Operational priority is unavailable for this conflicted result.")
+    else:
+        st.success(str(rows["message"]))
+    st.write("Previous incident snapshots", rows["previous_snapshot_ids"])
+    st.write("New incident snapshots", rows["new_snapshot_ids"])
 
 
 def render_review_queue(client: ApiClient, state: DashboardSessionState) -> None:

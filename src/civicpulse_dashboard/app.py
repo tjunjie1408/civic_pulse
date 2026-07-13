@@ -13,12 +13,15 @@ from civicpulse_dashboard.state import get_session_state
 from civicpulse_dashboard.ui.hotspot_map import render_hotspot_map
 from civicpulse_dashboard.ui.operational_queue import render_operational_queue
 from civicpulse_dashboard.ui.review_queue import render_review_queue
+from civicpulse_dashboard.ui.safe_reset import render_safe_reset
 from civicpulse_dashboard.ui.submit_complaint import render_submit_complaint
 
 
 def main() -> None:
     st.set_page_config(page_title="CivicPulse operations", page_icon="📍", layout="wide")
     with ApiClient() as client:
+        state = get_session_state(cast(MutableMapping[str, object], st.session_state))
+        render_safe_reset(client, state)
         try:
             readiness = client.health_ready()
         except DashboardApiError as exc:
@@ -30,7 +33,6 @@ def main() -> None:
                 "readiness checks pass."
             )
             return
-        state = get_session_state(cast(MutableMapping[str, object], st.session_state))
         incident_tab, map_tab, submit_tab, review_tab = st.tabs(
             ["Incidents", "Map", "Submit complaint", "Reviews"]
         )

@@ -13,6 +13,7 @@ _USER_MESSAGES = {
     ),
     "review_not_found": "This review is no longer available. Refresh the review queue.",
     "review_already_resolved": "This review was already handled. Refresh the page.",
+    "review_stale": "The review evidence is stale. Reload it and confirm the decision again.",
     "idempotency_conflict": "This submission key was already used with different complaint data.",
     "validation_error": "Check the submitted fields and try again.",
     "admin_reset_disabled": "Demo reset is disabled by the API configuration.",

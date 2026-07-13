@@ -25,7 +25,10 @@ class DashboardSessionState:
     idempotency_key: str | None = None
     submission_draft_fingerprint: str | None = None
     submission_in_progress: bool = False
+    review_in_progress: bool = False
+    review_note_draft: str = ""
     last_mutation_result: dict[str, Any] | None = None
+    last_reset_summary: dict[str, Any] | None = None
 
     def clear_after_refresh(self) -> None:
         """Drop selections whose snapshot identity may have been replaced."""
@@ -71,6 +74,40 @@ class DashboardSessionState:
             self.selected_incident_snapshot_id = current_ids[0]
         else:
             self.selected_incident_snapshot_id = None
+
+    def apply_review_transition(
+        self,
+        *,
+        review_id: str,
+        previous_ids: list[str],
+        current_ids: list[str],
+        final_relationship_state: str,
+        conflict_status: str | None,
+    ) -> None:
+        """Apply API-provided review transition metadata without caching payloads."""
+
+        self.apply_mutation_transition(previous_ids=previous_ids, current_ids=current_ids)
+        self.selected_review_id = review_id
+        self.last_mutation_result = {
+            "review_id": review_id,
+            "previous_incident_snapshot_ids": list(previous_ids),
+            "new_incident_snapshot_ids": list(current_ids),
+            "final_relationship_state": final_relationship_state,
+            "conflict_status": conflict_status,
+        }
+
+    def clear_after_reset(self) -> None:
+        """Clear demo-derived UI state while preserving user filters/configuration."""
+
+        self.selected_incident_snapshot_id = None
+        self.selected_review_id = None
+        self.idempotency_key = None
+        self.submission_draft_fingerprint = None
+        self.submission_in_progress = False
+        self.review_in_progress = False
+        self.review_note_draft = ""
+        self.last_mutation_result = None
+        self.last_reset_summary = None
 
 
 def get_session_state(session_state: MutableMapping[str, object]) -> DashboardSessionState:

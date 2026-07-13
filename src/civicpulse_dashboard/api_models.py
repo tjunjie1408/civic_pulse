@@ -132,6 +132,30 @@ class ReviewDetailResponse(DashboardModel):
     new_incident_snapshot_ids: list[UUID]
 
 
+class ReviewResolutionRequest(DashboardModel):
+    reviewer_id: str = Field(min_length=1, max_length=120)
+    note: str | None = Field(default=None, max_length=1000)
+
+    @field_validator("reviewer_id")
+    @classmethod
+    def validate_reviewer_id(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("reviewer_id must not be blank")
+        return stripped
+
+
+class ReviewMutationResponse(DashboardModel):
+    review: ReviewDetailResponse
+    final_relationship_state: MatchState
+    affected_complaint_ids: list[UUID]
+    previous_incident_snapshot_ids: list[UUID]
+    new_incident_snapshot_ids: list[UUID]
+    affected_incidents: list[IncidentSummaryResponse]
+    resulting_priorities: list[PriorityResponse | None]
+    conflict_status: ClusteringStatus | None
+
+
 class RelationshipEdgeResponse(DashboardModel):
     left_id: UUID
     right_id: UUID
@@ -217,3 +241,12 @@ class HealthResponse(DashboardModel):
     embedding_model: HealthComponentResponse
     seed: HealthComponentResponse
     photo_provider: HealthComponentResponse
+
+
+class SeedResetResponse(DashboardModel):
+    seed_version: str
+    seed_checksum: str
+    complaint_count: int
+    incident_count: int
+    review_counts: dict[str, int]
+    priority_counts: dict[str, int]

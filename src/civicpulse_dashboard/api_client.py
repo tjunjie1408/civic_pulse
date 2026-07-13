@@ -21,6 +21,9 @@ from civicpulse_dashboard.api_models import (
     LiveResponse,
     ReviewDetailResponse,
     ReviewListResponse,
+    ReviewMutationResponse,
+    ReviewResolutionRequest,
+    SeedResetResponse,
 )
 
 DEFAULT_TIMEOUT = httpx.Timeout(connect=2.0, read=5.0, write=5.0, pool=2.0)
@@ -96,6 +99,30 @@ class ApiClient:
     def get_review(self, review_id: str) -> ReviewDetailResponse:
         return self._get_model(f"/reviews/{review_id}", model=ReviewDetailResponse)
 
+    def approve_review(
+        self,
+        review_id: str,
+        reviewer_id: str,
+        note: str | None,
+    ) -> ReviewMutationResponse:
+        return self._resolve_review(review_id, reviewer_id, note, action="approve")
+
+    def reject_review(
+        self,
+        review_id: str,
+        reviewer_id: str,
+        note: str | None,
+    ) -> ReviewMutationResponse:
+        return self._resolve_review(review_id, reviewer_id, note, action="reject")
+
+    def reset_demo(self) -> SeedResetResponse:
+        return self._post_model(
+            "/admin/reset",
+            json=None,
+            headers={},
+            model=SeedResetResponse,
+        )
+
     def submit_complaint(
         self,
         request: ComplaintCreateRequest,
@@ -113,6 +140,22 @@ class ApiClient:
 
     def health_live(self) -> LiveResponse:
         return self._get_model("/health/live", model=LiveResponse)
+
+    def _resolve_review(
+        self,
+        review_id: str,
+        reviewer_id: str,
+        note: str | None,
+        *,
+        action: str,
+    ) -> ReviewMutationResponse:
+        request = ReviewResolutionRequest(reviewer_id=reviewer_id, note=note)
+        return self._post_model(
+            f"/reviews/{review_id}/{action}",
+            json=request.model_dump(mode="json"),
+            headers={},
+            model=ReviewMutationResponse,
+        )
 
     def _get_model[T: Any](
         self,
@@ -135,7 +178,7 @@ class ApiClient:
         self,
         path: str,
         *,
-        json: object,
+        json: object | None,
         headers: Mapping[str, str],
         model: type[T],
     ) -> T:
