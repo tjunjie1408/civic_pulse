@@ -188,11 +188,11 @@ class CivicPulseService:
                 f"{self.embedding_provider.model_name} is loaded and produced a vector",
             )
         except Exception:
-            embedding_model = self._component(
-                HealthStatus.UNAVAILABLE,
-                "embedding model is unavailable or not cached",
-                "uv run --offline python -m scripts.prewarm_model",
-            )
+                embedding_model = self._component(
+                    HealthStatus.UNAVAILABLE,
+                    "embedding model is unavailable or not cached",
+                    "uv run --offline python -m scripts.prewarm_model --offline",
+                )
 
         try:
             complaint_count = len(self.repository.list_complaints())

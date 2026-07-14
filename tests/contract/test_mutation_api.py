@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from civicpulse.api import AppSettings, create_app
 from civicpulse.domain import Category, ClusteringStatus, Complaint, Incident, PriorityLevel
+from civicpulse.repository import DatabaseBusy
 from civicpulse.service import IdempotencyConflict, SeedResult
 
 
@@ -210,6 +211,20 @@ def test_submission_conflict_and_unexpected_failure_do_not_leak_details() -> Non
     assert "SQL / secret path" not in unexpected.text
 
 
+def test_submission_busy_database_is_a_sanitized_503() -> None:
+    response = TestClient(
+        create_app(service=FakeMutationService(failure=DatabaseBusy()))
+    ).post(
+        "/api/v1/complaints",
+        headers={"Idempotency-Key": "busy"},
+        json=REQUEST,
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "database_busy"
+    assert "locked" not in response.text
+
+
 def test_conflict_submission_does_not_expose_operational_priority() -> None:
     response = TestClient(
         create_app(service=FakeMutationService(incident_status=ClusteringStatus.CONFLICT))
@@ -258,6 +273,17 @@ def test_reset_failure_is_sanitized() -> None:
     assert response.status_code == 503
     assert response.json()["error"]["code"] == "seed_configuration_error"
     assert "secret/seed.json" not in response.text
+
+
+def test_reset_busy_database_is_a_sanitized_503() -> None:
+    service = FakeMutationService(reset_failure=DatabaseBusy())
+    settings = AppSettings(admin_reset_enabled=True, seed_path="approved/demo-seed.json")
+    response = TestClient(create_app(settings=settings, service=service)).post(
+        "/api/v1/admin/reset"
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "database_busy"
 
 
 def test_mutation_openapi_is_deterministic_and_reset_has_no_request_body() -> None:

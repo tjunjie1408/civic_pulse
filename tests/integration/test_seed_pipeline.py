@@ -2,6 +2,7 @@ import hashlib
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from uuid import UUID
 
 import pytest
 
@@ -224,6 +225,48 @@ def test_seed_replacement_rolls_back_when_storage_fails(tmp_path):
         service.reset_seed(seed)
 
     assert snapshot(repository) == before
+
+
+def test_seed_replacement_rolls_back_after_dataset_delete(tmp_path):
+    service, repository = make_service(tmp_path)
+    seed = tmp_path / "seed.json"
+    write_seed(seed)
+    service.initialize_seed(seed)
+    extra = repository.list_complaints()[0].model_copy(
+        update={"id": UUID("00000000-0000-0000-0000-000000000999")}
+    )
+    repository.add_complaint(extra, "recovery-key")
+    before = storage_snapshot(repository)
+
+    def fail_after_delete(point: str) -> None:
+        if point == "after_dataset_delete":
+            raise RuntimeError("injected dataset delete failure")
+
+    repository.failure_hook = fail_after_delete
+    with pytest.raises(RuntimeError, match="injected dataset delete failure"):
+        service.reset_seed(seed)
+
+    assert storage_snapshot(repository) == before
+
+
+def storage_snapshot(repository):
+    tables = (
+        "complaints",
+        "embeddings",
+        "incidents",
+        "incident_members",
+        "match_edges",
+        "submission_keys",
+        "reviews",
+    )
+    with repository.connect() as connection:
+        return tuple(
+            (
+                table,
+                tuple(tuple(row) for row in connection.execute(f"SELECT * FROM {table}").fetchall()),
+            )
+            for table in tables
+        )
 
 
 def test_malformed_seed_leaves_previous_database_unchanged(tmp_path):

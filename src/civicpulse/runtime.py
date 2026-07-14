@@ -14,10 +14,14 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
 from civicpulse.api.app import AppSettings, create_app
 from civicpulse.config import load_matching_policy, load_priority_policy
 from civicpulse.domain import SensitiveLocation
-from civicpulse.embeddings import EmbeddingProvider, SentenceTransformerProvider
+from civicpulse.embeddings import (
+    EmbeddingProvider,
+    ModelCacheInvalid,
+    SentenceTransformerProvider,
+)
 from civicpulse.incident_query import IncidentQueryService
 from civicpulse.repository import SQLiteRepository
-from civicpulse.service import CivicPulseService
+from civicpulse.service import CivicPulseService, SeedManifest
 
 
 class RuntimeSettings(BaseModel):
@@ -75,6 +79,16 @@ def load_sensitive_locations(path: str | Path) -> tuple[SensitiveLocation, ...]:
     return locations
 
 
+def load_seed_manifest(path: str | Path) -> SeedManifest:
+    """Load only the validated manifest needed to compose a runtime."""
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        manifest = SeedManifest.model_validate(payload["manifest"])
+    except (OSError, KeyError, json.JSONDecodeError, ValidationError) as exc:
+        raise ValueError("invalid seed manifest configuration") from exc
+    return manifest
+
+
 @dataclass(frozen=True, slots=True)
 class RuntimeBundle:
     settings: RuntimeSettings
@@ -93,12 +107,17 @@ def build_runtime(
     matching_policy = load_matching_policy(resolved.matching_policy_path)
     priority_policy = load_priority_policy(resolved.priority_policy_path)
     sensitive_locations = load_sensitive_locations(resolved.sensitive_locations_path)
-    repository = SQLiteRepository(resolved.database_path)
-    repository.initialize()
-    provider = embedding_provider or SentenceTransformerProvider(
+    seed_manifest = load_seed_manifest(resolved.seed_path)
+    provider = embedding_provider or SentenceTransformerProvider.for_runtime(
         matching_policy.model_name,
         matching_policy.normalization_version,
+        expected_dimension=seed_manifest.embedding_dimension,
     )
+    probe = provider.embed(["CivicPulse offline model readiness check"])
+    if len(probe) != 1 or len(probe[0]) != seed_manifest.embedding_dimension:
+        raise ModelCacheInvalid("embedding_model_cache_invalid: readiness dimension mismatch")
+    repository = SQLiteRepository(resolved.database_path)
+    repository.initialize()
     service = CivicPulseService(
         repository,
         matching_policy,

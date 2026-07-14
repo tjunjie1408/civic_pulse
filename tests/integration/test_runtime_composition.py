@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from civicpulse.api.dto.complaints import ComplaintCreateRequest
+from civicpulse.embeddings import ModelCacheUnavailable
 from civicpulse.geo import haversine_metres
 from civicpulse.runtime import RuntimeSettings, build_runtime, load_sensitive_locations
 
@@ -69,6 +70,41 @@ def test_runtime_composes_ready_api_from_empty_database(tmp_path: Path) -> None:
     assert runtime.app.state.service is runtime.service
     assert runtime.app.state.repository is runtime.repository
     assert runtime.app.state.incident_query_service is runtime.incident_query_service
+
+
+def test_runtime_uses_cache_only_factory_with_manifest_dimension(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    observed: dict[str, object] = {}
+
+    def factory(*args: object, **kwargs: object) -> FakeProvider:
+        observed.update(kwargs)
+        return FakeProvider()
+
+    monkeypatch.setattr(
+        "civicpulse.runtime.SentenceTransformerProvider.for_runtime", factory
+    )
+
+    build_runtime(runtime_settings(tmp_path))
+
+    assert observed["expected_dimension"] == 384
+
+
+def test_runtime_missing_cache_fails_before_app_construction(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    def unavailable(*args: object, **kwargs: object) -> FakeProvider:
+        raise ModelCacheUnavailable
+
+    monkeypatch.setattr(
+        "civicpulse.runtime.SentenceTransformerProvider.for_runtime", unavailable
+    )
+
+    with pytest.raises(ModelCacheUnavailable) as caught:
+        build_runtime(runtime_settings(tmp_path))
+
+    assert caught.value.code == "embedding_model_cache_missing"
+    assert "C:/" not in str(caught.value)
 
 
 def test_runtime_restart_preserves_non_empty_state(tmp_path: Path) -> None:

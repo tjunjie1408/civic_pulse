@@ -14,7 +14,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from civicpulse.domain import Category
 from civicpulse.embeddings import SentenceTransformerProvider, cosine_similarity
 
-
 DEFAULT_DATA_PATH = Path("benchmarks/manglish_complaint_pairs.json")
 DEFAULT_MODEL = "intfloat/multilingual-e5-small"
 
@@ -189,7 +188,9 @@ def find_best_threshold(labeled_scores: list[tuple[float, Literal["match", "non_
 
 def score_pairs(pairs: list[BenchmarkPair], model_name: str) -> list[ScoredBenchmarkPair]:
     """Embed both sides of every pair and attach cosine similarities."""
-    provider = SentenceTransformerProvider(model_name, normalization_version="raw-v1")
+    provider = SentenceTransformerProvider.for_benchmark(
+        model_name, normalization_version="raw-v1"
+    )
     texts = [
         prefixed
         for pair in pairs

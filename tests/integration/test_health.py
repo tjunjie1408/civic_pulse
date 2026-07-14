@@ -81,7 +81,7 @@ def test_health_is_unavailable_when_model_fails(tmp_path):
     assert report.status.value == "unavailable"
     assert report.embedding_model.status.value == "unavailable"
     assert report.embedding_model.recovery_command == (
-        "uv run --offline python -m scripts.prewarm_model"
+        "uv run --offline python -m scripts.prewarm_model --offline"
     )
     assert "sk-" not in report.embedding_model.message
     assert len(repository.list_complaints()) == 1
@@ -129,9 +129,13 @@ def test_prewarm_command_runs_fixed_sentence(monkeypatch, tmp_path):
         def __init__(self, model_name, normalization_version):
             self.model_name = model_name
 
+        @classmethod
+        def for_prewarm(cls, model_name, normalization_version, *, offline, expected_dimension):
+            return cls(model_name, normalization_version)
+
         def embed(self, texts):
             assert texts == ["CivicPulse offline model readiness check"]
-            return ((1.0, 0.0),)
+            return ((1.0, *([0.0] * 383)),)
 
     monkeypatch.setattr(prewarm_model, "SentenceTransformerProvider", StubProvider)
     assert prewarm_model.prewarm("config/matching_policy.json") == 0

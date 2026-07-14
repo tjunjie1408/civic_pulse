@@ -5,25 +5,24 @@ from __future__ import annotations
 import json
 import sqlite3
 import struct
+from collections.abc import Callable, Generator, Iterable, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from math import isfinite
 from pathlib import Path
-from collections.abc import Iterable, Mapping
-from typing import Callable, Generator
-from uuid import UUID, NAMESPACE_URL, uuid5
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 from civicpulse.domain import (
     Category,
     Complaint,
     Incident,
     MatchDecision,
+    MatchState,
     RelationshipDecisionSource,
     RelationshipEdge,
     ReviewRecord,
     ReviewStatus,
-    MatchState,
 )
 
 
@@ -32,6 +31,36 @@ class SubmissionRecord:
     complaint: Complaint
     request_fingerprint: str | None
     result_payload: str | None
+
+
+class DatabaseBusy(RuntimeError):
+    """A bounded SQLite write could not acquire its lock."""
+
+    code = "database_busy"
+
+    def __init__(self) -> None:
+        super().__init__("The local database is busy; retry the operation.")
+
+
+class DatabaseCorrupt(RuntimeError):
+    """SQLite rejected the configured database file or schema."""
+
+    code = "database_corrupt"
+
+    def __init__(self) -> None:
+        super().__init__("The local database is corrupt or has an unsupported format.")
+
+
+def _raise_database_error(exc: Exception) -> None:
+    if isinstance(exc, (DatabaseBusy, DatabaseCorrupt)):
+        return
+    if isinstance(exc, sqlite3.OperationalError):
+        message = str(exc).casefold()
+        if "locked" in message or "busy" in message:
+            raise DatabaseBusy from exc
+        raise DatabaseCorrupt from exc
+    if isinstance(exc, sqlite3.DatabaseError) and not isinstance(exc, sqlite3.IntegrityError):
+        raise DatabaseCorrupt from exc
 
 
 class SQLiteRepository:
@@ -44,11 +73,15 @@ class SQLiteRepository:
     @contextmanager
     def connect(self) -> Generator[sqlite3.Connection, None, None]:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        connection = sqlite3.connect(self.path)
+        connection = sqlite3.connect(self.path, timeout=0.25)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys=ON")
+        connection.execute("PRAGMA busy_timeout=250")
         try:
             yield connection
+        except Exception as exc:
+            _raise_database_error(exc)
+            raise
         finally:
             connection.close()
 
@@ -517,6 +550,8 @@ class SQLiteRepository:
                 connection.execute("BEGIN IMMEDIATE")
                 for table in ("reviews", "submission_keys", "incident_members", "match_edges", "incidents", "embeddings", "complaints"):
                     connection.execute(f"DELETE FROM {table}")
+                if self.failure_hook is not None:
+                    self.failure_hook("after_dataset_delete")
                 for complaint in sorted(complaint_list, key=lambda item: str(item.id)):
                     connection.execute(
                         "INSERT INTO complaints(id,text,normalized_text,latitude,longitude,reported_at,category,photo_path) VALUES(?,?,?,?,?,?,?,?)",

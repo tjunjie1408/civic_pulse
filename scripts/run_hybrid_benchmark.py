@@ -196,7 +196,9 @@ def evaluate_pairs(
 
 
 def run_real_benchmark(pairs: list[BenchmarkPair], policy: MatchingPolicy) -> HybridBenchmarkReport:
-    provider = SentenceTransformerProvider(policy.model_name, policy.normalization_version)
+    provider = SentenceTransformerProvider.for_benchmark(
+        policy.model_name, policy.normalization_version
+    )
     texts = [
         text
         for pair in pairs

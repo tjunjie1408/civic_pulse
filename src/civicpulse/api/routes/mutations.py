@@ -30,6 +30,7 @@ from civicpulse.domain import (
     SubmissionResult,
 )
 from civicpulse.incident_query import IncidentRead
+from civicpulse.repository import DatabaseBusy
 from civicpulse.service import CivicPulseService, IdempotencyConflict, SeedResult
 
 router = APIRouter(tags=["mutations"])
@@ -131,6 +132,12 @@ def submit_complaint(
             message="The Idempotency-Key was reused with a different request.",
             status_code=409,
         ) from exc
+    except DatabaseBusy as exc:
+        raise ApiError(
+            code="database_busy",
+            message="The local database is busy; retry the operation.",
+            status_code=503,
+        ) from exc
     except Exception as exc:
         raise ApiError(
             code="internal_error",
@@ -169,6 +176,12 @@ def reset_seed(
         )
     try:
         result = service.reset_seed(settings.seed_path)
+    except DatabaseBusy as exc:
+        raise ApiError(
+            code="database_busy",
+            message="The local database is busy; retry the operation.",
+            status_code=503,
+        ) from exc
     except (OSError, ValueError) as exc:
         raise ApiError(
             code="seed_configuration_error",

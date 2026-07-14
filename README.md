@@ -147,7 +147,7 @@ Use a different policy file only when intentionally changing the configured cont
 uv run --offline python -m scripts.prewarm_model --policy config/matching_policy.json
 ```
 
-The readiness probe uses the fixed sentence `CivicPulse offline model readiness check` and the model configured in `config/matching_policy.json`.
+The readiness probe uses the fixed sentence `CivicPulse offline model readiness check` and the model configured in `config/matching_policy.json`. Production/demo runtime uses `local_files_only=True`; a missing cache fails fast and never triggers an implicit download. See the [offline, fault, and recovery runbook](docs/demo-runbook.md) for recovery commands and stable error codes.
 
 ### 3. Start the composed API and Dashboard
 
@@ -180,7 +180,7 @@ uv run --offline streamlit run src/civicpulse_dashboard/app.py
 
 On first start, an empty database is initialized from `data/seed_complaints.json`. A non-empty database is preserved across restarts. Reset remains disabled unless `CIVICPULSE_ADMIN_RESET_ENABLED=true`; database, seed, and sensitive-location paths (`CIVICPULSE_DB_PATH`, `CIVICPULSE_SEED_PATH`, and `CIVICPULSE_SENSITIVE_LOCATIONS_PATH`) are server-side configuration and are never supplied by API requests.
 
-The example Manglish report is intentionally `review_required` when automatic evidence is insufficient. It becomes confirmed incident membership only after an officer approves the candidate relationship in the review queue. Network-blocked startup, missing-cache recovery, and fault handling are deferred to Phase 9.2.
+The example Manglish report is intentionally `review_required` when automatic evidence is insufficient. It becomes confirmed incident membership only after an officer approves the candidate relationship in the review queue. Runtime cache, SQLite fault, reset rollback, restart, and Dashboard recovery behavior are documented in [`docs/demo-runbook.md`](docs/demo-runbook.md).
 
 ## Deterministic demo data
 
