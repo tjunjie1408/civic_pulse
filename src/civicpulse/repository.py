@@ -401,7 +401,18 @@ class SQLiteRepository:
             connection.execute("BEGIN IMMEDIATE")
             try:
                 connection.execute(
-                    "INSERT OR IGNORE INTO reviews(review_id,left_id,right_id,matcher_recommendation,matcher_reasons,matcher_evidence,status,created_at,graph_version_at_creation,version) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                    """
+                    INSERT INTO reviews(
+                        review_id,left_id,right_id,matcher_recommendation,matcher_reasons,
+                        matcher_evidence,status,created_at,graph_version_at_creation,version
+                    ) VALUES(?,?,?,?,?,?,?,?,?,?)
+                    ON CONFLICT(review_id) DO UPDATE SET
+                        matcher_recommendation=excluded.matcher_recommendation,
+                        matcher_reasons=excluded.matcher_reasons,
+                        matcher_evidence=excluded.matcher_evidence,
+                        graph_version_at_creation=excluded.graph_version_at_creation
+                    WHERE reviews.status='pending'
+                    """,
                     (
                         str(review_id),
                         str(edge.left_id),

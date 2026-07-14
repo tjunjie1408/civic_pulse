@@ -27,6 +27,7 @@ from civicpulse.domain import (
     ClusteringStatus,
     Complaint,
     Incident,
+    LocationEntity,
     PriorityAssessment,
     ReviewRead,
     ReviewRecord,
@@ -78,6 +79,10 @@ def _evidence(record: ReviewRecord) -> ReviewEvidenceResponse | None:
     evidence = record.matcher_evidence
     if evidence is None:
         return None
+
+    def location_entity_payload(item: LocationEntity) -> dict[str, object]:
+        return item.model_dump(mode="json")
+
     return ReviewEvidenceResponse(
         semantic_similarity=evidence.semantic_similarity,
         geo_distance_metres=evidence.distance_metres,
@@ -85,11 +90,11 @@ def _evidence(record: ReviewRecord) -> ReviewEvidenceResponse | None:
         category_compatibility=evidence.category_compatible,
         location_compatibility=evidence.location_compatibility,
         first_location_entities=[
-            LocationEntityResponse.model_validate(item)
+            LocationEntityResponse.model_validate(location_entity_payload(item))
             for item in evidence.first_location_entities
         ],
         second_location_entities=[
-            LocationEntityResponse.model_validate(item)
+            LocationEntityResponse.model_validate(location_entity_payload(item))
             for item in evidence.second_location_entities
         ],
     )

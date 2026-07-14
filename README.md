@@ -10,7 +10,7 @@ A local-first civic incident intelligence prototype that can run offline after i
 
 </div>
 
-> **Demo status** — Phase 8 is complete. The repository contains a working API contract, typed Dashboard gateway, synthetic Shah Alam-inspired seed data, review resolution, deterministic reset, and regression coverage.
+> **Demo status** — Phase 9.1 is complete. The repository contains a composed local API runtime, typed Dashboard gateway, synthetic Shah Alam-inspired seed data, review resolution, deterministic reset, and a real cached-model demo regression.
 
 ## Why CivicPulse?
 
@@ -115,7 +115,7 @@ Mutation responses expose previous and new snapshot IDs so clients can refresh w
 
 ## Development setup
 
-The repository currently contains the Dashboard client and injectable FastAPI boundary, but not a complete runtime composition entrypoint. The steps below prepare the environment and start the Dashboard client; the full browser demo requires a Phase 9 launcher that assembles the repository, embedding provider, application service, and seed state.
+The repository contains both an injection-only FastAPI boundary for contract tests and a production composition entrypoint for the local demo. The server owns the repository, policies, seed, sensitive-location fixture, and embedding provider; the Dashboard remains an HTTP client.
 
 ### 1. Install dependencies
 
@@ -149,7 +149,17 @@ uv run --offline python -m scripts.prewarm_model --policy config/matching_policy
 
 The readiness probe uses the fixed sentence `CivicPulse offline model readiness check` and the model configured in `config/matching_policy.json`.
 
-### 3. Start the Dashboard client
+### 3. Start the composed API and Dashboard
+
+Use two terminals after the embedding model has been prewarmed.
+
+Terminal 1 — composed API, SQLite, policies, seed, and cached embedding model:
+
+```powershell
+uv run --offline uvicorn civicpulse.runtime:create_runtime_app --factory --host 127.0.0.1 --port 8000
+```
+
+Terminal 2 — Dashboard HTTP client:
 
 ```powershell
 uv run --offline streamlit run src/civicpulse_dashboard/app.py
@@ -168,17 +178,9 @@ $env:CIVICPULSE_API_URL = "http://127.0.0.1:8000/api/v1"
 uv run --offline streamlit run src/civicpulse_dashboard/app.py
 ```
 
-### Current API launcher limitation
+On first start, an empty database is initialized from `data/seed_complaints.json`. A non-empty database is preserved across restarts. Reset remains disabled unless `CIVICPULSE_ADMIN_RESET_ENABLED=true`; database, seed, and sensitive-location paths (`CIVICPULSE_DB_PATH`, `CIVICPULSE_SEED_PATH`, and `CIVICPULSE_SENSITIVE_LOCATIONS_PATH`) are server-side configuration and are never supplied by API requests.
 
-The current repository exposes an injectable FastAPI factory through [`create_app()`](src/civicpulse/api/app.py), but it does **not** ship a default runtime composition launcher that constructs the repository, embedding provider, service, health service, and seed state together.
-
-The API boundary can be started as a bare factory shell for route inspection:
-
-```powershell
-uv run --offline uvicorn civicpulse.api.app:create_app --factory --host 127.0.0.1 --port 8000
-```
-
-It will not be a ready demo service without injected runtime dependencies. The Dashboard correctly reports the API as unavailable or not ready rather than falling back to SQLite. The complete browser demo currently requires the runtime composition entrypoint planned for Phase 9.
+The example Manglish report is intentionally `review_required` when automatic evidence is insufficient. It becomes confirmed incident membership only after an officer approves the candidate relationship in the review queue. Network-blocked startup, missing-cache recovery, and fault handling are deferred to Phase 9.2.
 
 ## Deterministic demo data
 
@@ -265,9 +267,9 @@ tests/
 
 Phase 8 closed the core Dashboard loop. Phase 9 focuses on reliability and performance:
 
-1. full demo regression;
-2. offline, fault, and recovery validation;
-3. measured performance budgets.
+1. **Task 9.1 complete:** full composed demo regression;
+2. **Task 9.2:** offline, fault, and recovery validation;
+3. **Task 9.3:** measured performance budgets.
 
 Only after those gates should optional photo enrichment or future spatial risk propagation expand the product surface.
 

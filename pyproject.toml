@@ -53,4 +53,5 @@ pythonpath = ["src"]
 markers = [
     "live: requires external credentials and network",
     "performance: local latency budget",
+    "e2e: real cached-model full demo regression",
 ]

@@ -566,7 +566,7 @@ class CivicPulseService:
         previous_incidents = tuple(self.repository.list_incidents())
         current = self.repository.list_complaints()
         if existing is None:
-            current = [*current, candidate]
+            current = sorted([*current, candidate], key=lambda item: str(item.id))
 
         # Model work happens before the first write for a new command.
         vectors = self.embedding_provider.embed([item.normalized_text for item in current])

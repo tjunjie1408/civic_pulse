@@ -1,14 +1,14 @@
 [
   {
-    "id": "school-taman-maju",
+    "id": "synthetic-school-seksyen-harmoni",
     "kind": "school",
-    "latitude": 3.1390,
-    "longitude": 101.6869
+    "latitude": 3.08011,
+    "longitude": 101.51847
   },
   {
-    "id": "hospital-seri-murni",
+    "id": "synthetic-hospital-taman-seri-murni",
     "kind": "hospital",
-    "latitude": 3.1450,
-    "longitude": 101.6900
+    "latitude": 3.0940,
+    "longitude": 101.5050
   }
 ]

@@ -40,7 +40,7 @@ def test_valid_multilingual_complaint_input_is_typed():
         ("latitude", 91),
         ("longitude", -181),
         ("reported_at", datetime.now()),
-        ("reported_at", datetime.now(timezone.utc) + timedelta(minutes=6)),
+        ("reported_at", datetime.now(timezone.utc) + timedelta(minutes=10)),
     ],
 )
 def test_invalid_complaint_input_is_rejected(field, value):

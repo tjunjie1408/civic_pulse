@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
 from civicpulse.config import load_matching_policy, load_priority_policy
-from civicpulse.domain import ComplaintInput, MatchState, ReviewStatus
+from civicpulse.domain import ComplaintInput, MatchState, RelationshipEdge, ReviewStatus
 from civicpulse.repository import SQLiteRepository
 from civicpulse.service import CivicPulseService
 
@@ -102,3 +103,53 @@ def test_unknown_review_id_is_rejected(tmp_path):
 
     with pytest.raises(ValueError, match="unknown review"):
         service.resolve_review("00000000-0000-0000-0000-999999999999", approve=True, reviewer_id="demo-officer")
+
+
+def test_pending_review_refreshes_graph_version_without_changing_evidence(tmp_path: Path) -> None:
+    _, repository, review = create_pending_review(tmp_path)
+    edge = RelationshipEdge(
+        left_id=review.left_id,
+        right_id=review.right_id,
+        decision=MatchState.REVIEW_REQUIRED,
+        reasons=review.matcher_reasons,
+        matcher_recommendation=review.matcher_recommendation,
+        matcher_evidence=review.matcher_evidence,
+    )
+
+    repository.create_review(edge, NOW, "graph-v2")
+    refreshed = repository.get_review(review.review_id)
+
+    assert refreshed is not None
+    assert refreshed.status is ReviewStatus.PENDING
+    assert refreshed.graph_version_at_creation == "graph-v2"
+    assert refreshed.matcher_recommendation is MatchState.REVIEW_REQUIRED
+    assert refreshed.matcher_reasons == review.matcher_reasons
+
+
+def test_resolved_review_is_not_refreshed_by_candidate_upsert(tmp_path: Path) -> None:
+    service, repository, review = create_pending_review(tmp_path)
+    service.resolve_review(
+        review.review_id,
+        approve=False,
+        reviewer_id="demo-officer",
+        now=NOW,
+    )
+    before = repository.get_review(review.review_id)
+    assert before is not None
+    edge = RelationshipEdge(
+        left_id=review.left_id,
+        right_id=review.right_id,
+        decision=MatchState.REVIEW_REQUIRED,
+        reasons=review.matcher_reasons,
+        matcher_recommendation=review.matcher_recommendation,
+        matcher_evidence=review.matcher_evidence,
+    )
+
+    repository.create_review(edge, NOW, "graph-v3")
+    after = repository.get_review(review.review_id)
+
+    assert after is not None
+    assert after.status is before.status
+    assert after.final_relationship_state is before.final_relationship_state
+    assert after.graph_version_at_creation == before.graph_version_at_creation
+    assert after.version == before.version
