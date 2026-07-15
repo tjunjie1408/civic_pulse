@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import MutableMapping
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -24,6 +25,7 @@ class DashboardSessionState:
     selected_review_id: str | None = None
     idempotency_key: str | None = None
     submission_draft_fingerprint: str | None = None
+    submission_reported_at: datetime | None = None
     submission_in_progress: bool = False
     review_in_progress: bool = False
     review_note_draft: str = ""
@@ -49,13 +51,23 @@ class DashboardSessionState:
             if value is not None
         }
 
-    def ensure_idempotency_key(self, draft_fingerprint: str) -> str:
-        """Keep one key across reruns, rotating it only for a changed draft."""
+    def ensure_submission_identity(
+        self,
+        draft_fingerprint: str,
+        *,
+        now: datetime | None = None,
+    ) -> tuple[str, datetime]:
+        """Keep one key and report time across reruns of the same draft."""
 
-        if self.submission_draft_fingerprint != draft_fingerprint or self.idempotency_key is None:
+        if (
+            self.submission_draft_fingerprint != draft_fingerprint
+            or self.idempotency_key is None
+            or self.submission_reported_at is None
+        ):
             self.submission_draft_fingerprint = draft_fingerprint
             self.idempotency_key = str(uuid4())
-        return self.idempotency_key
+            self.submission_reported_at = now or datetime.now(UTC)
+        return self.idempotency_key, self.submission_reported_at
 
     def apply_mutation_transition(
         self,
@@ -103,6 +115,7 @@ class DashboardSessionState:
         self.selected_review_id = None
         self.idempotency_key = None
         self.submission_draft_fingerprint = None
+        self.submission_reported_at = None
         self.submission_in_progress = False
         self.review_in_progress = False
         self.review_note_draft = ""

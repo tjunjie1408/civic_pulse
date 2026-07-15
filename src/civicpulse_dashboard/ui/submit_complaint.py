@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import cast
 
 import streamlit as st
+from pydantic import ValidationError
 
 from civicpulse_dashboard.api_client import ApiClient
 from civicpulse_dashboard.api_errors import DashboardApiError
@@ -29,6 +30,31 @@ def draft_fingerprint(text: str, latitude: float, longitude: float, category: st
         separators=(",", ":"),
     ).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
+
+
+def complaint_request_or_error(
+    *,
+    text: str,
+    latitude: float,
+    longitude: float,
+    reported_at: datetime,
+    category: Category,
+) -> tuple[ComplaintCreateRequest | None, str | None]:
+    """Build a validated request without allowing form errors to escape to Streamlit."""
+
+    if len(text.strip()) < 3:
+        return None, "Enter at least 3 non-space characters for the complaint."
+    try:
+        request = ComplaintCreateRequest(
+            text=text,
+            latitude=latitude,
+            longitude=longitude,
+            reported_at=reported_at,
+            category=category,
+        )
+    except ValidationError:
+        return None, "Check the complaint details and try again."
+    return request, None
 
 
 def render_submit_complaint(client: ApiClient, state: DashboardSessionState) -> None:
@@ -58,23 +84,28 @@ def render_submit_complaint(client: ApiClient, state: DashboardSessionState) -> 
         )
         submitted = st.form_submit_button("Submit complaint")
 
-    fingerprint = draft_fingerprint(text, latitude, longitude, category)
-    key = state.ensure_idempotency_key(fingerprint)
     if not submitted:
         return
 
     if state.submission_in_progress:
         st.info("Submission already in progress. Please wait for the API response.")
         return
+
+    fingerprint = draft_fingerprint(text, latitude, longitude, category)
+    key, reported_at = state.ensure_submission_identity(fingerprint)
+    request, validation_error = complaint_request_or_error(
+        text=text,
+        latitude=latitude,
+        longitude=longitude,
+        reported_at=reported_at,
+        category=category,
+    )
+    if request is None:
+        st.error(validation_error or "Check the complaint details and try again.")
+        return
+
     state.submission_in_progress = True
     try:
-        request = ComplaintCreateRequest(
-            text=text,
-            latitude=latitude,
-            longitude=longitude,
-            reported_at=datetime.now(UTC),
-            category=category,
-        )
         result = client.submit_complaint(request, key)
     except DashboardApiError as exc:
         st.error(exc.user_message)

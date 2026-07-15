@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import httpx
 import pytest
 
+import civicpulse_dashboard.ui.submit_complaint as submit_complaint_ui
 from civicpulse_dashboard.api_client import ApiClient
 from civicpulse_dashboard.api_errors import DashboardApiError
 from civicpulse_dashboard.api_models import (
@@ -156,14 +158,53 @@ def test_hotspot_rows_only_use_confirmed_incidents_and_keep_pending_separate() -
     assert rows[0]["priority"] == "high"
 
 
-def test_submission_state_reuses_key_for_same_draft_and_rotates_on_change() -> None:
+def test_submission_state_reuses_identity_for_same_draft_and_rotates_on_change() -> None:
     state = DashboardSessionState()
     first = draft_fingerprint("Blocked drain", 3.07, 101.52, "blocked_drain")
     second = draft_fingerprint("Blocked drain", 3.071, 101.52, "blocked_drain")
+    first_time = datetime(2026, 7, 15, 1, tzinfo=UTC)
+    later = first_time + timedelta(minutes=1)
 
-    first_key = state.ensure_idempotency_key(first)
-    assert state.ensure_idempotency_key(first) == first_key
-    assert state.ensure_idempotency_key(second) != first_key
+    ensure_identity = getattr(state, "ensure_submission_identity", None)
+    assert callable(ensure_identity)
+    first_key, first_reported_at = ensure_identity(first, now=first_time)
+    replay_key, replay_reported_at = ensure_identity(first, now=later)
+    changed_key, changed_reported_at = ensure_identity(second, now=later)
+
+    assert replay_key == first_key
+    assert replay_reported_at == first_reported_at == first_time
+    assert changed_key != first_key
+    assert changed_reported_at == later
+
+
+def test_short_trimmed_submission_returns_friendly_validation_error() -> None:
+    helper = getattr(submit_complaint_ui, "complaint_request_or_error", None)
+    assert callable(helper)
+    request, error = helper(
+        text="  ",
+        latitude=3.07,
+        longitude=101.52,
+        reported_at=datetime(2026, 7, 15, 1, tzinfo=UTC),
+        category="blocked_drain",
+    )
+
+    assert request is None
+    assert error == "Enter at least 3 non-space characters for the complaint."
+
+
+def test_request_model_validation_is_converted_to_user_message() -> None:
+    helper = getattr(submit_complaint_ui, "complaint_request_or_error", None)
+    assert callable(helper)
+    request, error = helper(
+        text="Blocked drain",
+        latitude=1000.0,
+        longitude=101.52,
+        reported_at=datetime(2026, 7, 15, 1, tzinfo=UTC),
+        category="blocked_drain",
+    )
+
+    assert request is None
+    assert error == "Check the complaint details and try again."
 
 
 def test_snapshot_transition_selects_unique_current_successor() -> None:

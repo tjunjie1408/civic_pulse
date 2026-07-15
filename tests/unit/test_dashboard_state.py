@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from civicpulse_dashboard.state import DashboardSessionState
 
 
@@ -66,6 +68,7 @@ def test_reset_clears_all_demo_state_but_preserves_filters() -> None:
     state.selected_review_id = "review-1"
     state.idempotency_key = "key-1"
     state.submission_draft_fingerprint = "draft-1"
+    state.submission_reported_at = datetime(2026, 7, 15, 1, tzinfo=UTC)
     state.submission_in_progress = True
     state.review_in_progress = True
     state.review_note_draft = "note"
@@ -79,6 +82,7 @@ def test_reset_clears_all_demo_state_but_preserves_filters() -> None:
     assert state.selected_review_id is None
     assert state.idempotency_key is None
     assert state.submission_draft_fingerprint is None
+    assert state.submission_reported_at is None
     assert state.submission_in_progress is False
     assert state.review_in_progress is False
     assert state.review_note_draft == ""
