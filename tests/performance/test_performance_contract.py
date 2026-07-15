@@ -117,6 +117,8 @@ def test_markdown_links_to_json_source_of_truth_without_raw_arrays() -> None:
 
     assert "benchmarks/reports/performance-budget.json" in markdown
     assert "Raw samples are retained" in markdown
+    assert "originally defined cached process readiness as <=8 s" in markdown
+    assert "retired as a hard gate, not silently widened" in markdown
     assert "[10.0" not in markdown
 
 
