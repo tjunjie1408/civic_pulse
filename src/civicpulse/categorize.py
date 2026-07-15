@@ -15,9 +15,20 @@ class CategoryPrediction(StrictModel):
 
 CATEGORY_TERMS: dict[Category, tuple[str, ...]] = {
     Category.POTHOLE: ("pothole", "jalan berlubang", "lubang jalan", "road hole"),
-    Category.BLOCKED_DRAIN: ("longkang tersumbat", "drain blocked", "blocked drain", "saliran tersumbat"),
-    Category.FLOODING: ("banjir", "flood", "air naik", "flash flood"),
-    Category.RUBBISH: ("sampah tidak dikutip", "sampah tak kutip", "garbage", "rubbish", "overflowing bin"),
+    Category.BLOCKED_DRAIN: (
+        "longkang tersumbat",
+        "drain blocked",
+        "blocked drain",
+        "saliran tersumbat",
+    ),
+    Category.FLOODING: ("banjir", "flood", "flooding", "flooded", "air naik", "flash flood"),
+    Category.RUBBISH: (
+        "sampah tidak dikutip",
+        "sampah tak kutip",
+        "garbage",
+        "rubbish",
+        "overflowing bin",
+    ),
     Category.STREET_LIGHT: ("lampu jalan", "street light", "streetlight", "lampu rosak"),
 }
 
@@ -44,7 +55,11 @@ def classify_category(normalized_text: str) -> CategoryPrediction:
     winners = [category for category, terms in scored.items() if len(terms) == highest]
     all_terms = tuple(sorted(term for terms in scored.values() for term in terms))
     if len(winners) != 1:
-        return CategoryPrediction(category=Category.OTHER, matched_terms=all_terms, review_required=True)
+        return CategoryPrediction(
+            category=Category.OTHER,
+            matched_terms=all_terms,
+            review_required=True,
+        )
 
     return CategoryPrediction(
         category=winners[0],

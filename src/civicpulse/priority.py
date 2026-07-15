@@ -37,7 +37,7 @@ class SafetySignal(StrictModel):
 
 
 SAFETY_TERMS: dict[str, tuple[str, ...]] = {
-    "active_flooding": ("banjir", "flood", "air naik", "flash flood"),
+    "active_flooding": ("banjir", "flood", "flooding", "flooded", "air naik", "flash flood"),
     "accident_injury": (
         "accident",
         "kemalangan",
@@ -59,7 +59,10 @@ SAFETY_TERMS: dict[str, tuple[str, ...]] = {
         "live wire",
     ),
 }
-_NEGATION_WORDS = {"no", "not", "tiada", "tidak", "tanpa"}
+_NEGATION_WORDS = {"no", "not", "tak", "tiada", "tidak", "tanpa"}
+_FLOODING_RESOLUTION_WORDS = {"ended", "receded", "resolved", "subsided", "surut"}
+_FLOODING_CLEAR_WORDS = {"clear", "cleared"}
+_FLOODING_HISTORICAL_WORDS = {"previously", "was", "were"}
 
 
 def _term_matches(text: str, term: str) -> bool:
@@ -68,6 +71,27 @@ def _term_matches(text: str, term: str) -> bool:
         prefix = text[: match.start()].split()
         if not prefix or not any(word in _NEGATION_WORDS for word in prefix[-2:]):
             return True
+    return False
+
+
+def _flooding_term_matches(text: str, term: str) -> bool:
+    """Match an active flooding occurrence after excluding explicit inactive context."""
+    pattern = re.compile(rf"(?<!\w){re.escape(term)}(?!\w)")
+    for match in pattern.finditer(text):
+        prefix = re.findall(r"\w+", text[: match.start()])
+        suffix = re.findall(r"\w+", text[match.end() :])
+        if any(word in _NEGATION_WORDS for word in prefix[-2:]):
+            continue
+        if suffix[:2] == ["with", "complaints"]:
+            continue
+        if any(word in _FLOODING_RESOLUTION_WORDS for word in suffix[:3]):
+            continue
+        historical = any(word in _FLOODING_HISTORICAL_WORDS for word in prefix[-2:]) or (
+            "last" in suffix[:3] or "yesterday" in suffix[:3]
+        )
+        if historical and any(word in _FLOODING_CLEAR_WORDS for word in suffix[:6]):
+            continue
+        return True
     return False
 
 
@@ -81,7 +105,10 @@ def detect_safety_signals(
         matched_terms: set[str] = set()
         for complaint in complaints:
             text = complaint.normalized_text
-            complaint_terms = {term for term in terms if _term_matches(text, term)}
+            term_matches = (
+                _flooding_term_matches if signal_name == "active_flooding" else _term_matches
+            )
+            complaint_terms = {term for term in terms if term_matches(text, term)}
             if complaint_terms:
                 matched_complaints.append(complaint)
                 matched_terms.update(complaint_terms)

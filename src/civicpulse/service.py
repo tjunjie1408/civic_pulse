@@ -576,12 +576,16 @@ class CivicPulseService:
 
         # Model work happens before the first write for a new command.
         vectors = self.embedding_provider.embed([item.normalized_text for item in current])
+        vectors_by_complaint_id = {
+            complaint.id: vector
+            for complaint, vector in zip(current, vectors, strict=True)
+        }
         if existing is None:
             try:
                 self.repository.add_complaint(candidate, idempotency_key, fingerprint)
                 self.repository.save_embedding(
                     candidate.id,
-                    vectors[-1],
+                    vectors_by_complaint_id[candidate.id],
                     self.embedding_provider.model_name,
                     self.embedding_provider.normalization_version,
                 )
@@ -590,9 +594,10 @@ class CivicPulseService:
                 raise
 
         try:
-            relationships = self._relationships(current, vectors)
+            automated_relationships = self._relationships(current, vectors)
+            graph_version = self._graph_version(automated_relationships)
+            relationships = self._apply_review_overrides(automated_relationships)
             incidents = build_incidents(current, relationships)
-            graph_version = self._graph_version(relationships)
             created_at = now or datetime.now(timezone.utc)
             priorities = tuple(
                 assess_priority(incident, current, self.sensitive_locations, self.priority_policy, now or datetime.now(timezone.utc))
