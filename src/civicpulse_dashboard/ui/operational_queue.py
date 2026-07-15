@@ -110,6 +110,7 @@ def render_operational_queue(client: ApiClient) -> None:
         st.error(exc.user_message)
         return
 
+    st.caption("CivicPulse operational queue ready")
     if not page.items:
         st.info("No incident snapshots match the current filters.")
         return

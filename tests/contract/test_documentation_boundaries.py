@@ -17,3 +17,14 @@ def test_offline_recovery_boundaries_are_documented() -> None:
         "CIVICPULSE_DB_PATH",
     ):
         assert term in text
+
+
+def test_performance_report_is_concise_and_links_raw_json() -> None:
+    root = Path(__file__).parents[2]
+    text = (root / "docs" / "performance-report.md").read_text(encoding="utf-8")
+
+    assert "benchmarks/reports/performance-budget.json" in text
+    assert "p50" in text
+    assert "p95" in text
+    assert "Known noise sources" in text
+    assert "No optimization was performed where the measured result already met budget." in text

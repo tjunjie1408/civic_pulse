@@ -1,0 +1,17 @@
+{
+  "budget_version": "prototype-1",
+  "warmup_runs": 3,
+  "measured_runs": 20,
+  "startup_runs": 5,
+  "reset_runs": 5,
+  "dashboard_runs": 5,
+  "cached_readiness_seconds_max": 8.0,
+  "incident_list_p95_ms_max": 250.0,
+  "incident_detail_p95_ms_max": 200.0,
+  "submission_p95_ms_max": 2500.0,
+  "review_resolution_p95_ms_max": 2000.0,
+  "reset_seconds_max": 45.0,
+  "ready_rss_mb_max": 1536.0,
+  "mutation_memory_growth_percent_max": 15.0,
+  "dashboard_first_usable_seconds_max": 5.0
+}

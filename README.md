@@ -273,6 +273,17 @@ Phase 8 closed the core Dashboard loop. Phase 9 focuses on reliability and perfo
 
 Only after those gates should optional photo enrichment or future spatial risk propagation expand the product surface.
 
+### Performance budget measurement
+
+Task 9.3 keeps correctness tests separate from wall-clock performance evidence. Run the opt-in cached-model harness explicitly:
+
+```powershell
+$env:HF_HUB_OFFLINE = "1"
+uv run --offline python -m scripts.run_performance_budget --offline --warmups 3 --runs 20 --startup-runs 5 --reset-runs 5 --dashboard-runs 5
+```
+
+The harness records environment metadata, raw samples, p50/p95/max summaries, API-process RSS, and hard-gate results. Ordinary correctness runs exclude the `performance` marker; run those measurements separately with `uv run --offline python -m pytest -m performance tests/performance -q`. Cold-start/download and Windows filesystem variance are informational, not production SLA claims. The concise reference report is [docs/performance-report.md](docs/performance-report.md); its raw JSON source is `benchmarks/reports/performance-budget.json`.
+
 ## Project status
 
 Built as a focused Hackathon prototype with a deliberately conservative matching boundary: explainability and safe uncertainty handling take priority over aggressive automatic merging.
