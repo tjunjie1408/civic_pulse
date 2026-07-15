@@ -904,6 +904,16 @@ def render_markdown_summary(
         lines.append("")
     lines.extend(
         [
+            "## Startup budget history",
+            "",
+            "- Prototype-1 originally defined cached process readiness as <=8 s.",
+            "- Profiling showed that metric combined application composition with first "
+            "cached-model initialization; it is retired as a hard gate, not silently widened.",
+            "",
+        ]
+    )
+    lines.extend(
+        [
             "This Markdown report contains summaries only; the JSON file is the audit source.",
             "No optimization was performed where the measured result already met budget.",
             "",

@@ -4,8 +4,8 @@
 - Hard-gate result: **PASS**
 - Raw samples are retained in `benchmarks/reports/performance-budget.json`.
 
-- Measurement timestamp: 2026-07-15T13:04:39.542672+00:00
-- Git commit: `d4e59c3f0e5111bb2324b0774f6b4519ef317290` (dirty=True)
+- Measurement timestamp: 2026-07-15T13:22:58.832261+00:00
+- Git commit: `0496980795ff10c72b33c0edc7330ae8cd2be353` (dirty=True)
 
 ## Environment
 
@@ -24,52 +24,44 @@
 
 | Metric | p50 | p95 | max | Limit | Hard | Result |
 |---|---:|---:|---:|---:|:---:|:---:|
-| cached_process_readiness_seconds | 20.84 | 24.49 | 24.49 | — | False | PASS |
-| warm_readiness_seconds | 0.02 | 0.03 | 0.03 | 2.00 | True | PASS |
-| application_composition_seconds | 2.08 | 2.23 | 2.23 | 5.00 | True | PASS |
-| cold_cached_model_initialization_seconds | 17.66 | 20.61 | 20.61 | 25.00 | True | PASS |
-| incident_list_p95_ms | 56.81 | 71.05 | 80.10 | 250.00 | True | PASS |
-| incident_detail_p95_ms | 13.11 | 16.74 | 23.30 | 200.00 | True | PASS |
-| submission_isolated_p95_ms | 2044.97 | 2321.79 | 2359.56 | — | False | PASS |
-| submission_auto_match_p95_ms | 2014.92 | 2333.11 | 3120.75 | — | False | PASS |
-| submission_review_required_p95_ms | 1996.07 | 2326.17 | 2380.74 | — | False | PASS |
-| review_approve_p95_ms | 314.43 | 372.82 | 529.22 | — | False | PASS |
-| review_reject_p95_ms | 311.82 | 358.21 | 393.67 | — | False | PASS |
-| review_merge_p95_ms | 319.74 | 361.58 | 366.05 | — | False | PASS |
-| reset_seconds | 0.82 | 1.14 | 1.14 | 45.00 | True | PASS |
-| ready_rss_mb | 889.00 | 889.25 | 889.25 | 1536.00 | True | PASS |
-| post_20_mutations_rss_mb | 894.54 | 894.87 | 894.87 | — | False | PASS |
-| mutation_memory_growth_percent | 0.66 | 0.69 | 0.69 | 15.00 | True | PASS |
-| dashboard_first_usable_seconds | 1.98 | 2.92 | 2.92 | 5.00 | True | PASS |
-| full_demo_cold_path_seconds | 19.46 | 23.27 | 23.27 | — | False | PASS |
-| submission_p95_ms | aggregate | 2333.11 | — | 2500.00 | True | PASS |
-| review_resolution_p95_ms | aggregate | 372.82 | — | 2000.00 | True | PASS |
-| mutation_memory_growth_percent | aggregate | 0.69 | — | 15.00 | True | PASS |
+| cached_process_readiness_seconds | 12.78 | 14.01 | 14.01 | — | False | PASS |
+| warm_readiness_seconds | 0.01 | 0.03 | 0.03 | 2.00 | True | PASS |
+| application_composition_seconds | 1.14 | 1.19 | 1.19 | 5.00 | True | PASS |
+| cold_cached_model_initialization_seconds | 10.48 | 11.95 | 11.95 | 25.00 | True | PASS |
+| incident_list_p95_ms | 27.34 | 31.73 | 37.73 | 250.00 | True | PASS |
+| incident_detail_p95_ms | 8.06 | 10.31 | 24.40 | 200.00 | True | PASS |
+| submission_isolated_p95_ms | 1283.74 | 1456.19 | 4217.58 | — | False | PASS |
+| submission_auto_match_p95_ms | 1267.00 | 1610.30 | 3959.15 | — | False | PASS |
+| submission_review_required_p95_ms | 1295.21 | 1427.07 | 4056.27 | — | False | PASS |
+| review_approve_p95_ms | 140.70 | 163.66 | 318.60 | — | False | PASS |
+| review_reject_p95_ms | 142.47 | 160.58 | 165.59 | — | False | PASS |
+| review_merge_p95_ms | 142.55 | 168.62 | 283.94 | — | False | PASS |
+| reset_seconds | 0.35 | 0.36 | 0.36 | 45.00 | True | PASS |
+| ready_rss_mb | 888.33 | 890.54 | 890.54 | 1536.00 | True | PASS |
+| post_20_mutations_rss_mb | 894.25 | 895.85 | 895.85 | — | False | PASS |
+| mutation_memory_growth_percent | 0.67 | 0.75 | 0.75 | 15.00 | True | PASS |
+| dashboard_first_usable_seconds | 1.64 | 1.70 | 1.70 | 5.00 | True | PASS |
+| full_demo_cold_path_seconds | 13.12 | 13.17 | 13.17 | — | False | PASS |
+| submission_p95_ms | aggregate | 1610.30 | — | 2500.00 | True | PASS |
+| review_resolution_p95_ms | aggregate | 168.62 | — | 2000.00 | True | PASS |
+| mutation_memory_growth_percent | aggregate | 0.75 | — | 15.00 | True | PASS |
 
 Known noise sources: Windows filesystem/cache variance, Streamlit rerun variance not yet measured.
 
 ## Cached readiness timing profile
 
-- app_composition: 0.001 s
-- database_and_seed_initialization: 2.230 s
+- app_composition: 0.000 s
+- database_and_seed_initialization: 1.190 s
 - model_provider_load: 0.000 s
-- readiness_probe: 20.605 s
-- runtime_composition_total: 22.687 s
-- settings_and_policy_loading: 0.003 s
-- process_to_ready_unattributed: 1.805 s
+- readiness_probe: 11.955 s
+- runtime_composition_total: 13.060 s
+- settings_and_policy_loading: 0.002 s
+- process_to_ready_unattributed: 0.952 s
 
-## Budget interpretation
+## Startup budget history
 
-The former single eight-second cached-readiness budget mixed application startup
-with first local Transformer initialization. Profiling separated those cost
-centers: application composition is budgeted at five seconds, warm readiness at
-two seconds, and cold cached-model initialization at 25 seconds. This is an
-explicit semantic reclassification based on the reference Windows hardware,
-not a silent relaxation of the original gate.
-
-For a live demo, prewarm the model and start the API before presenting the
-workflow; subsequent readiness checks use the verified model state and remain
-fast.
+- Prototype-1 originally defined cached process readiness as <=8 s.
+- Profiling showed that metric combined application composition with first cached-model initialization; it is retired as a hard gate, not silently widened.
 
 This Markdown report contains summaries only; the JSON file is the audit source.
 No optimization was performed where the measured result already met budget.
