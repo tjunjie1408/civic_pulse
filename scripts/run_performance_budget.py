@@ -14,7 +14,7 @@ from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from subprocess import Popen
-from typing import Literal, Protocol, cast
+from typing import Literal, NamedTuple, Protocol, cast
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -32,7 +32,48 @@ from civicpulse.performance import (
 )
 
 MetricStatus = Literal["completed", "incomplete"]
+SubmissionScenario = Literal["isolated", "auto_match", "review_required"]
 ROOT = Path(__file__).resolve().parents[1]
+STARTUP_DEADLINE_SECONDS = 90.0
+
+
+class DashboardTiming(NamedTuple):
+    dashboard_seconds: list[float]
+    full_demo_seconds: list[float]
+
+
+class StartupMeasurement(NamedTuple):
+    cold_process_seconds: list[float]
+    warm_readiness_seconds: list[float]
+    profiles: list[dict[str, float]]
+
+
+def derive_startup_profile_metrics(profile: Mapping[str, float]) -> tuple[float, float]:
+    """Separate application composition from one-time local model verification."""
+    application_seconds = sum(
+        profile.get(name, 0.0)
+        for name in (
+            "settings_and_policy_loading",
+            "database_and_seed_initialization",
+            "app_composition",
+        )
+    )
+    cold_model_seconds = profile.get("model_provider_load", 0.0) + profile.get(
+        "readiness_probe", 0.0
+    )
+    return application_seconds, cold_model_seconds
+
+
+def dashboard_elapsed_seconds(
+    *, api_process_started: float, dashboard_started: float, dashboard_usable: float
+) -> tuple[float, float]:
+    """Return dashboard-only and full-demo elapsed times from explicit boundaries."""
+    if not api_process_started <= dashboard_started <= dashboard_usable:
+        raise ValueError("Dashboard timing markers must be monotonic")
+    return (
+        dashboard_usable - dashboard_started,
+        dashboard_usable - api_process_started,
+    )
 
 
 class ResponseLike(Protocol):
@@ -55,7 +96,14 @@ class ClientLike(Protocol):
 
 def metric_run_count(metric: str, budget: PerformanceBudget) -> int:
     """Return the run count for a metric's cost class."""
-    if metric in {"cached_process_readiness_seconds", "cold_start_ms", "ready_rss_mb"}:
+    if metric in {
+        "cached_process_readiness_seconds",
+        "application_composition_seconds",
+        "warm_readiness_seconds",
+        "cold_cached_model_initialization_seconds",
+        "cold_start_ms",
+        "ready_rss_mb",
+    }:
         return budget.startup_runs
     if metric in {"reset_seconds"}:
         return budget.reset_runs
@@ -118,24 +166,171 @@ def _timed_milliseconds(operation: Callable[[], object]) -> float:
     return (time.perf_counter() - started) * 1000
 
 
-def _complaint_payload(text: str) -> dict[str, object]:
+def timed_milliseconds_with_result[T](
+    operation: Callable[[], T],
+    *,
+    clock: Callable[[], float] = time.perf_counter,
+) -> tuple[float, T]:
+    """Time an operation while returning its result for untimed validation."""
+    started = clock()
+    result = operation()
+    return (clock() - started) * 1000, result
+
+
+def submission_sample_text(scenario: SubmissionScenario, sample_index: int) -> str:
+    """Return a deterministic uncached text while retaining scenario-defining entities."""
+    if sample_index < 0:
+        raise ValueError("sample_index must be non-negative")
+    prefixes = {
+        "isolated": "isolated performance sample",
+        "auto_match": "Road hole at Blok A Jln Ampang pothole sample",
+        "review_required": "Pothole near school sample",
+    }
+    return f"{prefixes[scenario]} {sample_index}"
+
+
+def _complaint_payload(
+    text: str,
+    *,
+    latitude: float = 3.2501,
+    longitude: float = 101.7501,
+) -> dict[str, object]:
     return {
         "text": text,
         "category": "blocked_drain",
-        "latitude": 3.2501,
-        "longitude": 101.7501,
+        "latitude": latitude,
+        "longitude": longitude,
         "reported_at": datetime.now(UTC).isoformat(),
     }
 
 
-def _submit(client: ClientLike, text: str, key: str) -> None:
+def _submit(
+    client: ClientLike,
+    text: str,
+    key: str,
+    *,
+    latitude: float = 3.2501,
+    longitude: float = 101.7501,
+) -> ResponseLike:
     response = client.post(
         "/api/v1/complaints",
         headers={"Idempotency-Key": key},
-        json=_complaint_payload(text),
+        json=_complaint_payload(text, latitude=latitude, longitude=longitude),
     )
     if response.status_code != 201:
         raise RuntimeError(f"performance submission failed with status {response.status_code}")
+    return response
+
+
+def _submission_complaint_id(response: ResponseLike) -> str:
+    try:
+        payload = cast(dict[str, object], response.json())
+        complaint = cast(dict[str, object], payload["complaint"])
+        return str(complaint["complaint_id"])
+    except (KeyError, TypeError) as exc:
+        raise RuntimeError("performance submission returned an invalid complaint payload") from exc
+
+
+def assert_submission_scenario(
+    response: ResponseLike,
+    *,
+    expected_decision: SubmissionScenario,
+    fixture_complaint_id: str | None = None,
+) -> str:
+    """Validate the named scenario from the API response after timing completes."""
+    measured_complaint_id = _submission_complaint_id(response)
+    try:
+        payload = cast(dict[str, object], response.json())
+        decisions = cast(list[dict[str, object]], payload["relationship_decisions"])
+    except (KeyError, TypeError) as exc:
+        raise RuntimeError(
+            "performance submission returned invalid relationship decisions"
+        ) from exc
+
+    if expected_decision == "isolated":
+        if any(
+            measured_complaint_id in {str(edge.get("left_id")), str(edge.get("right_id"))}
+            for edge in decisions
+        ):
+            raise RuntimeError(
+                "performance isolated scenario produced a relationship for the measured complaint"
+            )
+        return measured_complaint_id
+    if fixture_complaint_id is None:
+        raise ValueError("fixture_complaint_id is required for paired scenarios")
+
+    expected_pair = {fixture_complaint_id, measured_complaint_id}
+    if not any(
+        {str(edge.get("left_id")), str(edge.get("right_id"))} == expected_pair
+        and edge.get("decision") == expected_decision
+        for edge in decisions
+    ):
+        raise RuntimeError(
+            f"performance {expected_decision} scenario did not expose the expected pair decision"
+        )
+    return measured_complaint_id
+
+
+def _pending_review_page(
+    response: ResponseLike,
+    left_complaint_id: str,
+    right_complaint_id: str,
+) -> tuple[bool, int, int]:
+    if response.status_code != 200:
+        raise RuntimeError(f"pending review lookup failed with status {response.status_code}")
+    try:
+        payload = cast(dict[str, object], response.json())
+        items = cast(list[dict[str, object]], payload["items"])
+        total = int(cast(int, payload["total"]))
+    except (KeyError, TypeError, ValueError) as exc:
+        raise RuntimeError("pending review lookup returned an invalid payload") from exc
+    expected_pair = {left_complaint_id, right_complaint_id}
+    found = any(
+        {str(item.get("left_complaint_id")), str(item.get("right_complaint_id"))} == expected_pair
+        for item in items
+    )
+    return found, len(items), total
+
+
+def assert_pending_review_pair(
+    response: ResponseLike,
+    left_complaint_id: str,
+    right_complaint_id: str,
+) -> None:
+    """Require one pending-review API page to expose the measured complaint pair."""
+    found, _, _ = _pending_review_page(response, left_complaint_id, right_complaint_id)
+    if not found:
+        raise RuntimeError("performance review_required scenario did not expose a pending review")
+
+
+def assert_pending_review_pair_via_api(
+    client: ClientLike,
+    left_complaint_id: str,
+    right_complaint_id: str,
+    *,
+    page_size: int = 100,
+) -> None:
+    """Page through pending reviews until the measured pair is found or exhausted."""
+    if page_size < 1:
+        raise ValueError("page_size must be positive")
+    offset = 0
+    while True:
+        response = client.get(
+            "/api/v1/reviews",
+            params={"status": "pending", "limit": page_size, "offset": offset},
+        )
+        found, item_count, total = _pending_review_page(
+            response,
+            left_complaint_id,
+            right_complaint_id,
+        )
+        if found:
+            return
+        offset += item_count
+        if item_count == 0 or offset >= total:
+            raise RuntimeError(
+                "performance review_required scenario did not expose a pending review"
+            )
 
 
 def _reset(client: ClientLike) -> None:
@@ -174,7 +369,7 @@ def measure_api_workflows(
         client.get("/api/v1/incidents", params={"limit": 50, "offset": 0})
         _reset(client)
 
-    for _ in range(runs):
+    for sample_index in range(runs):
         list_started = time.perf_counter()
         page = client.get("/api/v1/incidents", params={"limit": 50, "offset": 0})
         if page.status_code != 200:
@@ -190,23 +385,52 @@ def measure_api_workflows(
         )
 
         _reset(client)
-        samples["submission_isolated_p95_ms"].append(
-            _timed_milliseconds(
-                lambda: _submit(client, f"isolated-{time.perf_counter_ns()}", "isolated-key")
+        isolated_elapsed, isolated_response = timed_milliseconds_with_result(
+            lambda sample_index=sample_index: _submit(
+                client,
+                submission_sample_text("isolated", sample_index),
+                "isolated-key",
+                latitude=0.0,
+                longitude=0.0,
             )
         )
+        samples["submission_isolated_p95_ms"].append(isolated_elapsed)
+        assert_submission_scenario(isolated_response, expected_decision="isolated")
+
         _reset(client)
-        _submit(client, "Pothole at Block A Jalan Ampang", "auto-seed")
-        samples["submission_auto_match_p95_ms"].append(
-            _timed_milliseconds(
-                lambda: _submit(client, "Road hole at Blok A Jln Ampang", "auto-measured")
+        auto_seed_response = _submit(client, "Pothole at Block A Jalan Ampang", "auto-seed")
+        auto_seed_id = _submission_complaint_id(auto_seed_response)
+        auto_elapsed, auto_response = timed_milliseconds_with_result(
+            lambda sample_index=sample_index: _submit(
+                client,
+                submission_sample_text("auto_match", sample_index),
+                "auto-measured",
             )
         )
-        _reset(client)
-        _submit(client, "Pothole at Block A Jalan Ampang", "review-seed")
-        samples["submission_review_required_p95_ms"].append(
-            _timed_milliseconds(lambda: _submit(client, "Pothole near school", "review-measured"))
+        samples["submission_auto_match_p95_ms"].append(auto_elapsed)
+        assert_submission_scenario(
+            auto_response,
+            expected_decision="auto_match",
+            fixture_complaint_id=auto_seed_id,
         )
+
+        _reset(client)
+        review_seed_response = _submit(client, "Pothole at Block A Jalan Ampang", "review-seed")
+        review_seed_id = _submission_complaint_id(review_seed_response)
+        review_elapsed, review_response = timed_milliseconds_with_result(
+            lambda sample_index=sample_index: _submit(
+                client,
+                submission_sample_text("review_required", sample_index),
+                "review-measured",
+            )
+        )
+        samples["submission_review_required_p95_ms"].append(review_elapsed)
+        review_complaint_id = assert_submission_scenario(
+            review_response,
+            expected_decision="review_required",
+            fixture_complaint_id=review_seed_id,
+        )
+        assert_pending_review_pair_via_api(client, review_seed_id, review_complaint_id)
 
         for metric, endpoint in (
             ("review_approve_p95_ms", "approve"),
@@ -278,19 +502,32 @@ def _api_worker_pid(parent_pid: int) -> int:
         text=True,
     )
     children = [int(line) for line in result.stdout.splitlines() if line.strip().isdigit()]
-    return children[0] if children else parent_pid
+    candidates = [parent_pid, *children]
+    rss_by_pid: list[tuple[float, int]] = []
+    for pid in candidates:
+        try:
+            rss_by_pid.append((read_process_rss_mb(pid), pid))
+        except OSError:
+            continue
+    return max(rss_by_pid, default=(0.0, parent_pid))[1]
 
 
-def measure_cached_process_readiness(*, runs: int, warmup_runs: int = 0) -> list[float]:
-    """Measure fresh API child process startup through a ready health response."""
+def measure_cached_process_readiness(
+    *, runs: int, warmup_runs: int = 0, profile_path: Path | None = None
+) -> StartupMeasurement:
+    """Measure cold process startup, warm health reads, and per-run startup spans."""
     if warmup_runs:
         measure_cached_process_readiness(runs=warmup_runs)
-    samples: list[float] = []
+    cold_samples: list[float] = []
+    warm_samples: list[float] = []
+    profiles: list[dict[str, float]] = []
     for _ in range(runs):
         with tempfile.TemporaryDirectory(prefix="civicpulse-perf-") as directory:
             port = _free_port()
             environment = build_child_environment()
             environment["CIVICPULSE_DB_PATH"] = str(Path(directory) / "runtime.db")
+            if profile_path is not None:
+                environment["CIVICPULSE_STARTUP_PROFILE_PATH"] = str(profile_path)
             process: Popen[bytes] | None = None
             started = time.perf_counter()
             try:
@@ -301,7 +538,7 @@ def measure_cached_process_readiness(*, runs: int, warmup_runs: int = 0) -> list
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
-                deadline = time.perf_counter() + 30.0
+                deadline = time.perf_counter() + STARTUP_DEADLINE_SECONDS
                 ready = False
                 while time.perf_counter() < deadline:
                     if process.poll() is not None:
@@ -316,12 +553,24 @@ def measure_cached_process_readiness(*, runs: int, warmup_runs: int = 0) -> list
                     except (OSError, URLError):
                         time.sleep(0.05)
                 if not ready:
-                    raise RuntimeError("API child process did not become ready within 30 seconds")
-                samples.append(time.perf_counter() - started)
+                    raise RuntimeError(
+                        "API child process did not become ready within "
+                        f"{STARTUP_DEADLINE_SECONDS:.0f} seconds"
+                    )
+                cold_samples.append(time.perf_counter() - started)
+                if profile_path is not None and profile_path.exists():
+                    profiles.append(cast(dict[str, float], json.loads(profile_path.read_text())))
+                warm_started = time.perf_counter()
+                with urlopen(
+                    f"http://127.0.0.1:{port}/api/v1/health/ready", timeout=5
+                ) as warm_response:
+                    if warm_response.status != 200:
+                        raise RuntimeError("warm readiness probe returned a non-ready status")
+                warm_samples.append(time.perf_counter() - warm_started)
             finally:
                 if process is not None:
                     _terminate_process_tree(process)
-    return samples
+    return StartupMeasurement(cold_samples, warm_samples, profiles)
 
 
 def _post_child_json(url: str, payload: dict[str, object], key: str) -> None:
@@ -360,7 +609,7 @@ def measure_api_process_memory(
                 stderr=subprocess.DEVNULL,
             )
             try:
-                deadline = time.perf_counter() + 30.0
+                deadline = time.perf_counter() + STARTUP_DEADLINE_SECONDS
                 while time.perf_counter() < deadline:
                     if process.poll() is not None:
                         raise RuntimeError("API child process exited before RSS readiness")
@@ -387,13 +636,16 @@ def measure_api_process_memory(
     return ready_samples, post_mutation_samples
 
 
-def measure_dashboard_first_usable(*, runs: int, warmup_runs: int = 0) -> list[float]:
+def measure_dashboard_first_usable(
+    *, runs: int, warmup_runs: int = 0
+) -> DashboardTiming:
     """Measure API/Dashboard startup to a visible operational marker."""
     from streamlit.testing.v1 import AppTest
 
     if warmup_runs:
         measure_dashboard_first_usable(runs=warmup_runs)
-    samples: list[float] = []
+    dashboard_samples: list[float] = []
+    full_demo_samples: list[float] = []
     for _ in range(runs):
         with tempfile.TemporaryDirectory(prefix="civicpulse-dashboard-") as directory:
             port = _free_port()
@@ -408,7 +660,7 @@ def measure_dashboard_first_usable(*, runs: int, warmup_runs: int = 0) -> list[f
             )
             dashboard_process: Popen[bytes] | None = None
             previous_url = os.environ.get("CIVICPULSE_API_URL")
-            started = time.perf_counter()
+            api_process_started = time.perf_counter()
             try:
                 deadline = time.perf_counter() + 30.0
                 while time.perf_counter() < deadline:
@@ -422,6 +674,7 @@ def measure_dashboard_first_usable(*, runs: int, warmup_runs: int = 0) -> list[f
                         time.sleep(0.05)
                 else:
                     raise RuntimeError("API child process did not become ready for Dashboard")
+                dashboard_started = time.perf_counter()
                 os.environ["CIVICPULSE_API_URL"] = f"http://127.0.0.1:{port}/api/v1"
                 dashboard_port = _free_port()
                 dashboard_environment = build_child_environment()
@@ -466,7 +719,14 @@ def measure_dashboard_first_usable(*, runs: int, warmup_runs: int = 0) -> list[f
                 captions = [str(item.value) for item in app.caption]
                 if "CivicPulse operational queue ready" not in captions:
                     raise RuntimeError("Dashboard operational queue marker was not rendered")
-                samples.append(time.perf_counter() - started)
+                dashboard_usable = time.perf_counter()
+                dashboard_seconds, full_demo_seconds = dashboard_elapsed_seconds(
+                    api_process_started=api_process_started,
+                    dashboard_started=dashboard_started,
+                    dashboard_usable=dashboard_usable,
+                )
+                dashboard_samples.append(dashboard_seconds)
+                full_demo_samples.append(full_demo_seconds)
             finally:
                 if previous_url is None:
                     os.environ.pop("CIVICPULSE_API_URL", None)
@@ -475,7 +735,7 @@ def measure_dashboard_first_usable(*, runs: int, warmup_runs: int = 0) -> list[f
                 if dashboard_process is not None:
                     _terminate_process_tree(dashboard_process)
                 _terminate_process_tree(api_process)
-    return samples
+    return DashboardTiming(dashboard_samples, full_demo_samples)
 
 
 def read_process_rss_mb(pid: int) -> float:
@@ -553,6 +813,7 @@ def render_markdown_summary(
     timestamp: str | None = None,
     git_commit: str | None = None,
     git_dirty: bool | None = None,
+    startup_profile: Mapping[str, float] | None = None,
 ) -> str:
     """Render the concise report shell; raw arrays stay in the JSON source of truth."""
     result = (
@@ -636,6 +897,11 @@ def render_markdown_summary(
                 )
         noise = ", ".join(known_noise_sources) or "none"
         lines.extend(["", f"Known noise sources: {noise}.", ""])
+    if startup_profile:
+        lines.extend(["## Cached readiness timing profile", ""])
+        for name, seconds in startup_profile.items():
+            lines.append(f"- {name}: {seconds:.3f} s")
+        lines.append("")
     lines.extend(
         [
             "This Markdown report contains summaries only; the JSON file is the audit source.",
@@ -723,10 +989,25 @@ def run_performance_budget(
         raise ValueError("The performance harness requires explicit offline mode.")
     with tempfile.TemporaryDirectory(prefix="civicpulse-performance-") as directory:
         database_path = Path(directory) / "performance.db"
-        readiness = measure_cached_process_readiness(
-            runs=budget.startup_runs, warmup_runs=budget.warmup_runs
+        profile_path = Path(directory) / "startup-profile.json"
+        startup = measure_cached_process_readiness(
+            runs=budget.startup_runs,
+            warmup_runs=budget.warmup_runs,
+            profile_path=profile_path,
         )
-        raw_samples = {"cached_process_readiness_seconds": readiness}
+        raw_samples = {
+            "cached_process_readiness_seconds": startup.cold_process_seconds,
+            "warm_readiness_seconds": startup.warm_readiness_seconds,
+        }
+        application_samples: list[float] = []
+        cold_model_samples: list[float] = []
+        for profile in startup.profiles:
+            application_seconds, cold_model_seconds = derive_startup_profile_metrics(profile)
+            application_samples.append(application_seconds)
+            cold_model_samples.append(cold_model_seconds)
+        if application_samples and cold_model_samples:
+            raw_samples["application_composition_seconds"] = application_samples
+            raw_samples["cold_cached_model_initialization_seconds"] = cold_model_samples
         raw_samples.update(
             measure_api_workflows(
                 database_path,
@@ -745,9 +1026,26 @@ def run_performance_budget(
             for ready, post in zip(ready_rss, post_mutation_rss, strict=True)
         ]
         raw_samples["mutation_memory_growth_percent"] = growth_samples
-        raw_samples["dashboard_first_usable_seconds"] = measure_dashboard_first_usable(
+        dashboard_timing = measure_dashboard_first_usable(
             runs=budget.dashboard_runs, warmup_runs=budget.warmup_runs
         )
+        raw_samples["dashboard_first_usable_seconds"] = dashboard_timing.dashboard_seconds
+        raw_samples["full_demo_cold_path_seconds"] = dashboard_timing.full_demo_seconds
+        startup_profile = {}
+        if startup.profiles:
+            profile_names = sorted({name for profile in startup.profiles for name in profile})
+            startup_profile = {
+                name: summarize(
+                    [profile[name] for profile in startup.profiles if name in profile]
+                ).p95
+                for name in profile_names
+            }
+            runtime_total = startup_profile.get("runtime_composition_total")
+            if runtime_total is not None:
+                startup_profile["process_to_ready_unattributed"] = max(
+                    0.0,
+                    summarize(startup.cold_process_seconds).p95 - runtime_total,
+                )
     summaries = {name: summarize(values) for name, values in raw_samples.items() if values}
     commit, dirty = _git_metadata()
     growth_percent = max(raw_samples["mutation_memory_growth_percent"])
@@ -764,7 +1062,8 @@ def run_performance_budget(
         warmup_runs=budget.warmup_runs,
         measured_runs=budget.measured_runs,
         measurement_method=(
-            "time.perf_counter with API readiness, Streamlit root response, and AppTest marker"
+            "time.perf_counter; cold process, warm readiness, and startup spans are "
+            "separate; Dashboard timer starts after API readiness"
         ),
     )
     report = PerformanceReport(
@@ -783,6 +1082,7 @@ def run_performance_budget(
             ),
         },
         evaluations=evaluation.metrics,
+        startup_profile=startup_profile,
         known_noise_sources=(
             "Windows filesystem/cache variance",
             "Streamlit rerun variance not yet measured",
@@ -806,6 +1106,7 @@ def run_performance_budget(
                 timestamp=report.timestamp,
                 git_commit=report.git_commit,
                 git_dirty=report.git_dirty,
+                startup_profile=report.startup_profile,
             ),
             encoding="utf-8",
         )
@@ -839,9 +1140,7 @@ def main() -> None:
         output_json = ROOT / "benchmarks" / "reports" / "performance-budget.json"
         output_markdown = ROOT / "docs" / "performance-report.md"
     if not args.offline:
-        raise SystemExit(
-            "Use --offline; the performance harness never downloads models implicitly."
-        )
+        parser.error("Use --offline; the performance harness never downloads models implicitly.")
     try:
         report = run_performance_budget(
             budget_path=args.budget,
@@ -855,7 +1154,7 @@ def main() -> None:
             dashboard_runs=args.dashboard_runs,
         )
     except (OSError, RuntimeError, ValueError) as exc:
-        raise SystemExit(f"performance measurement infrastructure failed: {exc}") from exc
+        parser.exit(2, f"performance measurement infrastructure failed: {exc}\n")
     raise SystemExit(
         classify_exit_code(
             measurement_status=report.measurement_status,

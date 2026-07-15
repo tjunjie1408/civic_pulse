@@ -20,6 +20,15 @@ class FakeProvider:
         return tuple((1.0, *([0.0] * 383)) for _ in texts)
 
 
+class CountingProvider(FakeProvider):
+    readiness_probe_calls = 0
+
+    def embed(self, texts: Sequence[str]) -> tuple[tuple[float, ...], ...]:
+        if tuple(texts) == ("CivicPulse offline model readiness check",):
+            self.readiness_probe_calls += 1
+        return super().embed(texts)
+
+
 def runtime_settings(tmp_path: Path) -> RuntimeSettings:
     return RuntimeSettings(
         database_path=tmp_path / "civicpulse.db",
@@ -70,6 +79,17 @@ def test_runtime_composes_ready_api_from_empty_database(tmp_path: Path) -> None:
     assert runtime.app.state.service is runtime.service
     assert runtime.app.state.repository is runtime.repository
     assert runtime.app.state.incident_query_service is runtime.incident_query_service
+    assert runtime.startup_spans["readiness_probe"] >= 0.0
+    assert runtime.startup_spans["runtime_composition_total"] >= sum(
+        runtime.startup_spans[name]
+        for name in (
+            "settings_and_policy_loading",
+            "model_provider_load",
+            "readiness_probe",
+            "database_and_seed_initialization",
+            "app_composition",
+        )
+    )
 
 
 def test_runtime_uses_cache_only_factory_with_manifest_dimension(
@@ -88,6 +108,20 @@ def test_runtime_uses_cache_only_factory_with_manifest_dimension(
     build_runtime(runtime_settings(tmp_path))
 
     assert observed["expected_dimension"] == 384
+
+
+def test_readiness_reuses_verified_model_state_without_reencoding(
+    tmp_path: Path,
+) -> None:
+    provider = CountingProvider()
+    runtime = build_runtime(runtime_settings(tmp_path), embedding_provider=provider)
+    client = TestClient(runtime.app)
+
+    assert client.get("/api/v1/health/ready").status_code == 200
+    assert client.get("/api/v1/health/ready").status_code == 200
+    assert client.get("/api/v1/health/ready").status_code == 200
+
+    assert provider.readiness_probe_calls == 1
 
 
 def test_runtime_missing_cache_fails_before_app_construction(

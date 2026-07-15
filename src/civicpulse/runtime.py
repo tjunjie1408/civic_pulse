@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -96,6 +97,7 @@ class RuntimeBundle:
     service: CivicPulseService
     incident_query_service: IncidentQueryService
     app: FastAPI
+    startup_spans: dict[str, float] = field(default_factory=lambda: {})
 
 
 def build_runtime(
@@ -103,19 +105,30 @@ def build_runtime(
     *,
     embedding_provider: EmbeddingProvider | None = None,
 ) -> RuntimeBundle:
+    composition_started = time.perf_counter()
+    startup_spans: dict[str, float] = {}
     resolved = settings or RuntimeSettings.from_environment()
     matching_policy = load_matching_policy(resolved.matching_policy_path)
     priority_policy = load_priority_policy(resolved.priority_policy_path)
     sensitive_locations = load_sensitive_locations(resolved.sensitive_locations_path)
     seed_manifest = load_seed_manifest(resolved.seed_path)
+    startup_spans["settings_and_policy_loading"] = time.perf_counter() - composition_started
+
+    model_started = time.perf_counter()
     provider = embedding_provider or SentenceTransformerProvider.for_runtime(
         matching_policy.model_name,
         matching_policy.normalization_version,
         expected_dimension=seed_manifest.embedding_dimension,
     )
+    startup_spans["model_provider_load"] = time.perf_counter() - model_started
+
+    probe_started = time.perf_counter()
     probe = provider.embed(["CivicPulse offline model readiness check"])
     if len(probe) != 1 or len(probe[0]) != seed_manifest.embedding_dimension:
         raise ModelCacheInvalid("embedding_model_cache_invalid: readiness dimension mismatch")
+    startup_spans["readiness_probe"] = time.perf_counter() - probe_started
+
+    database_started = time.perf_counter()
     repository = SQLiteRepository(resolved.database_path)
     repository.initialize()
     service = CivicPulseService(
@@ -124,9 +137,13 @@ def build_runtime(
         priority_policy,
         provider,
         sensitive_locations,
+        embedding_verified=True,
     )
     if not repository.list_complaints():
         service.initialize_seed(resolved.seed_path)
+    startup_spans["database_and_seed_initialization"] = time.perf_counter() - database_started
+
+    app_started = time.perf_counter()
     incident_query_service = IncidentQueryService(
         repository,
         priority_policy,
@@ -142,13 +159,24 @@ def build_runtime(
         health_service=service.health,
         incident_query_service=incident_query_service,
     )
-    return RuntimeBundle(
+    bundle = RuntimeBundle(
         settings=resolved,
         repository=repository,
         service=service,
         incident_query_service=incident_query_service,
         app=app,
+        startup_spans={
+            **startup_spans,
+            "app_composition": time.perf_counter() - app_started,
+            "runtime_composition_total": time.perf_counter() - composition_started,
+        },
     )
+    profile_path = os.environ.get("CIVICPULSE_STARTUP_PROFILE_PATH")
+    if profile_path:
+        Path(profile_path).write_text(
+            json.dumps(bundle.startup_spans, sort_keys=True), encoding="utf-8"
+        )
+    return bundle
 
 
 def create_runtime_app() -> FastAPI:

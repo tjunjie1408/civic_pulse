@@ -33,6 +33,9 @@ def test_budget_loads_run_counts_and_thresholds() -> None:
     assert budget.startup_runs == 5
     assert budget.reset_runs == 5
     assert budget.dashboard_runs == 5
+    assert budget.application_composition_seconds_max == 5.0
+    assert budget.warm_readiness_seconds_max == 2.0
+    assert budget.cold_cached_model_initialization_seconds_max == 25.0
     assert budget.submission_p95_ms_max == 2500.0
     assert budget.review_resolution_p95_ms_max == 2000.0
 
@@ -42,16 +45,43 @@ def test_hard_breach_fails_but_informational_breach_does_not() -> None:
     evaluation = evaluate_budget(
         budget,
         {
-            "incident_list_p95_ms": MetricSummary(count=3, p50=200.0, p95=300.0, maximum=300.0),
+            "application_composition_seconds": MetricSummary(
+                count=3, p50=3.0, p95=6.0, maximum=6.0
+            ),
+            "cached_process_readiness_seconds": MetricSummary(
+                count=3, p50=20.0, p95=30.0, maximum=30.0
+            ),
             "cold_start_ms": MetricSummary(count=3, p50=9000.0, p95=9000.0, maximum=9000.0),
         },
         rss_growth_percent=0.0,
     )
 
     assert evaluation.passed is False
-    assert evaluation.metrics["incident_list_p95_ms"].hard is True
+    assert evaluation.metrics["application_composition_seconds"].hard is True
+    assert evaluation.metrics["application_composition_seconds"].passed is False
+    assert evaluation.metrics["cached_process_readiness_seconds"].hard is False
     assert evaluation.metrics["cold_start_ms"].hard is False
     assert evaluation.metrics["cold_start_ms"].passed is True
+
+
+def test_cold_model_initialization_uses_wider_explicit_gate() -> None:
+    budget = PerformanceBudget.load(Path("config/performance_budget.json"))
+    evaluation = evaluate_budget(
+        budget,
+        {
+            "cold_cached_model_initialization_seconds": MetricSummary(
+                count=3, p50=22.0, p95=24.0, maximum=24.0
+            ),
+            "warm_readiness_seconds": MetricSummary(
+                count=3, p50=0.2, p95=0.4, maximum=0.4
+            ),
+        },
+        rss_growth_percent=0.0,
+    )
+
+    assert evaluation.metrics["cold_cached_model_initialization_seconds"].hard is True
+    assert evaluation.metrics["cold_cached_model_initialization_seconds"].passed is True
+    assert evaluation.metrics["warm_readiness_seconds"].passed is True
 
 
 def test_submission_and_review_gate_use_slowest_scenario() -> None:

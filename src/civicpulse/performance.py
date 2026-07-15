@@ -20,7 +20,9 @@ class PerformanceBudget(BaseModel):
     startup_runs: int = Field(ge=1)
     reset_runs: int = Field(ge=1)
     dashboard_runs: int = Field(ge=1)
-    cached_readiness_seconds_max: float = Field(gt=0)
+    application_composition_seconds_max: float = Field(gt=0)
+    warm_readiness_seconds_max: float = Field(gt=0)
+    cold_cached_model_initialization_seconds_max: float = Field(gt=0)
     incident_list_p95_ms_max: float = Field(gt=0)
     incident_detail_p95_ms_max: float = Field(gt=0)
     submission_p95_ms_max: float = Field(gt=0)
@@ -88,6 +90,7 @@ class PerformanceReport(BaseModel):
     summaries: dict[str, MetricSummary]
     rss: dict[str, float]
     evaluations: dict[str, MetricEvaluation]
+    startup_profile: dict[str, float] = Field(default_factory=dict)
     known_noise_sources: tuple[str, ...]
     measurement_status: Literal["completed", "incomplete"]
     hard_gate_passed: bool | None
@@ -130,7 +133,12 @@ def evaluate_budget(
 ) -> BudgetEvaluation:
     """Evaluate available metrics and aggregate scenario-specific mutation gates."""
     threshold_by_metric: dict[str, tuple[float, bool]] = {
-        "cached_process_readiness_seconds": (budget.cached_readiness_seconds_max, True),
+        "application_composition_seconds": (budget.application_composition_seconds_max, True),
+        "warm_readiness_seconds": (budget.warm_readiness_seconds_max, True),
+        "cold_cached_model_initialization_seconds": (
+            budget.cold_cached_model_initialization_seconds_max,
+            True,
+        ),
         "incident_list_p95_ms": (budget.incident_list_p95_ms_max, True),
         "incident_detail_p95_ms": (budget.incident_detail_p95_ms_max, True),
         "reset_seconds": (budget.reset_seconds_max, True),

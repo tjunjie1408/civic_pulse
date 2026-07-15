@@ -147,7 +147,7 @@ Use a different policy file only when intentionally changing the configured cont
 uv run --offline python -m scripts.prewarm_model --policy config/matching_policy.json
 ```
 
-The readiness probe uses the fixed sentence `CivicPulse offline model readiness check` and the model configured in `config/matching_policy.json`. Production/demo runtime uses `local_files_only=True`; a missing cache fails fast and never triggers an implicit download. See the [offline, fault, and recovery runbook](docs/demo-runbook.md) for recovery commands and stable error codes.
+The readiness probe uses the fixed sentence `CivicPulse offline model readiness check` and the model configured in `config/matching_policy.json`. Production/demo runtime uses `local_files_only=True`; a missing cache fails fast and never triggers an implicit download. The first cached-model initialization on the Windows reference machine can take 20+ seconds; prewarm and start the API before a live demo. Subsequent readiness checks reuse the verified model state and are fast. See the [offline, fault, and recovery runbook](docs/demo-runbook.md) for recovery commands and stable error codes.
 
 ### 3. Start the composed API and Dashboard
 
@@ -275,7 +275,7 @@ Only after those gates should optional photo enrichment or future spatial risk p
 
 ### Performance budget measurement
 
-Task 9.3 keeps correctness tests separate from wall-clock performance evidence. Run the opt-in cached-model harness explicitly:
+Task 9.3 keeps correctness tests separate from wall-clock performance evidence. Its startup budgets intentionally separate application composition, warm readiness, and one-time cached-model initialization; the old single eight-second readiness budget mixed these costs and is retired. Run the opt-in cached-model harness explicitly:
 
 ```powershell
 $env:HF_HUB_OFFLINE = "1"

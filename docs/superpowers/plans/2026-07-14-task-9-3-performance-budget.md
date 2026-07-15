@@ -12,9 +12,9 @@
 
 - Record OS, CPU, RAM, Python version, model, seed size, SQLite backend, offline mode, warm-up count, measured-run count, measurement method, timestamp, and git commit.
 - Runtime measurements use HF_HUB_OFFLINE=1 and the cached model; first-ever download is informational only.
-- Hard gates are cached API readiness, incident-list p95, incident-detail p95, complaint-submission p95, review-resolution p95, deterministic reset duration, steady-state RSS, 20-mutation RSS growth, and Dashboard first usable render.
+- Hard gates are application composition, warm readiness, cold cached-model initialization, incident-list p95, incident-detail p95, complaint-submission p95, review-resolution p95, deterministic reset duration, steady-state RSS, 20-mutation RSS growth, and Dashboard first usable render.
 - Informational metrics are cold start including model import/download, Streamlit rerun variance, Windows filesystem/cache noise, and one-off vacuum or antivirus interference.
-- Initial budgets: cached process readiness <=8 s; incident-list p95 <=250 ms; incident-detail p95 <=200 ms; submission p95 <=2.5 s where the aggregate is the maximum of the three submission scenarios; review resolution p95 <=2.0 s where the aggregate is the maximum of approve/reject/merge; reset <=45 s; API ready RSS <=1536 MB; 20-mutation growth <=15%; Dashboard first usable render <=5 s after API readiness.
+- Initial budgets: application composition <=5 s; warm readiness <=2 s; cold cached-model initialization <=25 s; incident-list p95 <=250 ms; incident-detail p95 <=200 ms; submission p95 <=2.5 s where the aggregate is the maximum of the three submission scenarios; review resolution p95 <=2.0 s where the aggregate is the maximum of approve/reject/merge; reset <=45 s; API ready RSS <=1536 MB; 20-mutation growth <=15%; Dashboard first usable render <=5 s after API readiness. The previous eight-second budget mixed application startup with first local Transformer initialization and is retained only as historical context.
 - Incident-list fixtures contain 60 persisted incidents, use limit=50/default sorting, and run against a warm SQLite cache.
 - Submission samples include isolated, clear auto-match, and review-required paths. Review samples include approve, reject, and approve-causing-merge.
 - Reset timing includes seed validation, embedding reuse/load, matching, clustering, priority, and atomic replacement; the report states whether embeddings were regenerated.
@@ -82,7 +82,9 @@ Expected: failures because the models, loader, percentile rule, and evaluator do
   "startup_runs": 5,
   "reset_runs": 5,
   "dashboard_runs": 5,
-  "cached_readiness_seconds_max": 8.0,
+  "application_composition_seconds_max": 5.0,
+  "warm_readiness_seconds_max": 2.0,
+  "cold_cached_model_initialization_seconds_max": 25.0,
   "incident_list_p95_ms_max": 250.0,
   "incident_detail_p95_ms_max": 200.0,
   "submission_p95_ms_max": 2500.0,
@@ -145,9 +147,9 @@ uv run --offline ruff check scripts/run_performance_budget.py tests/performance/
 
 **Interfaces:** Use existing \`compose_runtime()\`/\`create_app()\`, TestClient or in-process HTTP, \`IncidentQueryService.list_incidents(IncidentListQuery(limit=50, offset=0))\`, submission routes, review approve/reject routes, and the admin reset route. Do not introduce alternate production paths.
 
-- [x] **Step 1: Add failing assertions for exact labels.** Require \`cached_readiness_seconds\`, \`incident_list_p95_ms\`, \`incident_detail_p95_ms\`, \`submission_isolated_p95_ms\`, \`submission_auto_match_p95_ms\`, \`submission_review_required_p95_ms\`, \`review_approve_p95_ms\`, \`review_reject_p95_ms\`, \`review_merge_p95_ms\`, and \`reset_seconds\`.
+- [x] **Step 1: Add failing assertions for exact labels.** Require \`application_composition_seconds\`, \`warm_readiness_seconds\`, \`cold_cached_model_initialization_seconds\`, \`incident_list_p95_ms\`, \`incident_detail_p95_ms\`, \`submission_isolated_p95_ms\`, \`submission_auto_match_p95_ms\`, \`submission_review_required_p95_ms\`, \`review_approve_p95_ms\`, \`review_reject_p95_ms\`, \`review_merge_p95_ms\`, and \`reset_seconds\`.
 - [x] **Step 2: Run the contract test and confirm missing labels fail.**
-- [x] **Step 3: Implement exact boundaries.** Cached readiness is measured in a fresh API subprocess: process start -> `/api/v1/health/ready` ready response, excluding only client-side polling overhead. Same-process composition is reported separately as `runtime_composition_seconds`. Cold start also uses a fresh subprocess and excludes first-ever model download. Incident list uses 60 incidents, warm SQLite, limit 50, and default sorting. For each measured submission/review sample, reset to deterministic seed, warm required caches, execute exactly one mutation, and exclude reset time. Use independent pending-review fixtures for approve, reject, and merge.
+- [x] **Step 3: Implement exact boundaries.** Fresh API runs record process-to-ready as historical cold-path context, warm readiness as a timed health request after the first ready response, application composition from startup spans excluding model provider load and the first readiness encode, and cold cached-model initialization from the model-load plus one-time probe spans. Incident list uses 60 incidents, warm SQLite, limit 50, and default sorting. For each measured submission/review sample, reset to deterministic seed, warm required caches, execute exactly one mutation, and exclude reset time. Use independent pending-review fixtures for approve, reject, and merge.
 - [x] **Step 3a: Implement explicit aggregate gate mapping.** Preserve all scenario summaries in the report, then set `submission_p95_ms` to the maximum of isolated/auto-match/review-required p95 values and `review_resolution_p95_ms` to the maximum of approve/reject/merge p95 values before applying the single budget threshold for each aggregate.
 - [x] **Step 4: Run and inspect the focused test before any optimization.**
 

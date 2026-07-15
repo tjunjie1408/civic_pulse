@@ -130,6 +130,7 @@ class CivicPulseService:
         sensitive_locations: Sequence[SensitiveLocation] = (),
         *,
         photo_healthcheck: Callable[[], None] | None = None,
+        embedding_verified: bool = False,
     ) -> None:
         self.repository = repository
         self.matching_policy = matching_policy
@@ -137,6 +138,8 @@ class CivicPulseService:
         self.embedding_provider = embedding_provider
         self.sensitive_locations = tuple(sensitive_locations)
         self.photo_healthcheck = photo_healthcheck
+        # Runtime composition sets this only after a local-cache probe and dimension check.
+        self.embedding_verified = embedding_verified
 
     @staticmethod
     def _component(
@@ -180,12 +183,15 @@ class CivicPulseService:
             )
 
         try:
-            vectors = self.embedding_provider.embed(["CivicPulse offline model readiness check"])
-            if not vectors or not vectors[0]:
-                raise ValueError("empty embedding vector")
+            if not self.embedding_verified:
+                vectors = self.embedding_provider.embed(
+                    ["CivicPulse offline model readiness check"]
+                )
+                if not vectors or not vectors[0]:
+                    raise ValueError("empty embedding vector")
             embedding_model = self._component(
                 HealthStatus.HEALTHY,
-                f"{self.embedding_provider.model_name} is loaded and produced a vector",
+                f"{self.embedding_provider.model_name} is loaded and dimension-verified",
             )
         except Exception:
                 embedding_model = self._component(
