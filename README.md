@@ -10,7 +10,9 @@ A local-first civic incident intelligence prototype that can run offline after i
 
 </div>
 
-> **Demo status** — Phase 9.1 is complete. The repository contains a composed local API runtime, typed Dashboard gateway, synthetic Shah Alam-inspired seed data, review resolution, deterministic reset, and a real cached-model demo regression.
+> **Demo status** — Phase 9 is complete. The core MVP now includes composed runtime startup,
+> offline/fault/recovery validation, measured performance budgets, and versioned reference
+> evidence. It is frozen for demo and release rehearsal.
 
 ## Why CivicPulse?
 
@@ -215,13 +217,20 @@ uv run --offline python -m scripts.run_hybrid_benchmark
 git diff --check
 ```
 
-The latest verified Phase 8 gate, recorded at Phase 8 completion in commit `5861099`, is:
+The verified Phase 9 evidence is:
 
-- `180 passed`;
+- non-performance tests: `247 passed`;
+- performance contracts: `19 passed`;
 - Pyright: `0 errors`;
-- Dashboard Ruff: all checks passed;
-- hybrid benchmark: holdout false auto merges `0`, clear positive auto rate `0.75`;
+- hybrid benchmark: **PASS**, with `0` holdout false merges;
+- active performance hard gates: **PASS**;
 - known non-blocking warning: the installed FastAPI/Starlette test stack reports an httpx deprecation warning.
+
+Reference evidence and recovery guidance:
+
+- [performance summary](docs/performance-report.md);
+- [raw performance samples and gate results](benchmarks/reports/performance-budget.json);
+- [offline demo and recovery runbook](docs/demo-runbook.md).
 
 The OpenAPI freeze tests compare a canonical generated snapshot and never update it automatically. Contract changes require an explicit snapshot update and review.
 
@@ -262,16 +271,21 @@ tests/
 - Priority is a transparent prototype policy, not causal discovery or a flood prediction model.
 - Photo analysis and SCM-inspired risk propagation are intentionally outside the current core workflow.
 - This repository currently has no declared `LICENSE` file; reuse terms should be clarified before public redistribution.
+- Repository-wide pre-commit is not currently green. Task-scoped tests, Pyright, benchmark,
+  performance contracts, and diff checks pass, but repository-wide Ruff/Pyright/pytest-hook
+  baseline debt remains to be handled in a separate hygiene phase.
 
 ## Roadmap
 
-Phase 8 closed the core Dashboard loop. Phase 9 focuses on reliability and performance:
+Phase 9 is complete and closes the reliability and performance work for the core MVP:
 
 1. **Task 9.1 complete:** full composed demo regression;
-2. **Task 9.2:** offline, fault, and recovery validation;
-3. **Task 9.3:** measured performance budgets.
+2. **Task 9.2 complete:** offline, fault, and recovery validation;
+3. **Task 9.3 complete:** measured performance budgets and versioned reference evidence.
 
-Only after those gates should optional photo enrichment or future spatial risk propagation expand the product surface.
+**Core MVP status: demo-ready and frozen for rehearsal.** Phase 10 is optional enrichment,
+not the default next step. Repository quality-debt cleanup should precede any optional photo
+or spatial risk-propagation expansion.
 
 ### Performance budget measurement
 
