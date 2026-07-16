@@ -193,6 +193,36 @@ def test_incident_order_is_repeatable() -> None:
     ]
 
 
+def test_list_incidents_orders_by_priority_then_recency_then_snapshot_id() -> None:
+    high_priority = complaint(41, category=Category.POTHOLE, hours_ago=25)
+    newer_low = complaint(42, category=Category.POTHOLE, hours_ago=1)
+    older_low = complaint(43, category=Category.POTHOLE, hours_ago=2)
+    tie_first = complaint(44, category=Category.POTHOLE, hours_ago=3)
+    tie_second = complaint(45, category=Category.POTHOLE, hours_ago=3)
+    conflict = complaint(46, category=Category.POTHOLE, hours_ago=0)
+    response = client_for(
+        complaints=[high_priority, newer_low, older_low, tie_first, tie_second, conflict],
+        incidents=[
+            incident(46, conflict, status=ClusteringStatus.CONFLICT),
+            incident(43, older_low),
+            incident(45, tie_second),
+            incident(41, high_priority),
+            incident(42, newer_low),
+            incident(44, tie_first),
+        ],
+    ).get("/api/v1/incidents")
+
+    assert response.status_code == 200
+    assert [item["incident_id"] for item in response.json()["items"]] == [
+        "10000000-0000-0000-0000-000000000041",
+        "10000000-0000-0000-0000-000000000042",
+        "10000000-0000-0000-0000-000000000043",
+        "10000000-0000-0000-0000-000000000044",
+        "10000000-0000-0000-0000-000000000045",
+        "10000000-0000-0000-0000-000000000046",
+    ]
+
+
 def test_conflict_detail_has_null_priority_and_exposes_snapshot_evidence() -> None:
     item = complaint(3, category=Category.POTHOLE)
     conflict = incident(3, item, status=ClusteringStatus.CONFLICT)
