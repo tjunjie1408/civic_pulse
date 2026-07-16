@@ -5,6 +5,7 @@ __pycache__/
 .pyright/
 .coverage
 htmlcov/
+.superpowers/
 .env
 data/civicpulse.db
 data/uploads/

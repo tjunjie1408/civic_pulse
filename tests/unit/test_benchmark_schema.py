@@ -1,7 +1,17 @@
 import hashlib
 import json
+from pathlib import Path
 
 from scripts.run_embedding_benchmark import BenchmarkPair, load_pairs
+
+
+def test_benchmark_json_files_are_checked_out_with_lf():
+    attributes_path = Path(".gitattributes")
+
+    assert attributes_path.exists(), "benchmark byte hashes require an explicit Git EOL policy"
+    assert "benchmarks/*.json text eol=lf" in attributes_path.read_text(
+        encoding="utf-8"
+    ).splitlines()
 
 
 def test_loader_returns_complete_typed_incident_pairs():
