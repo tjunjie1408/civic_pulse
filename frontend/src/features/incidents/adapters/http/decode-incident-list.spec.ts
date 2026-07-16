@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   incidentPageFixture,
+  reorderedIncidentListTransportFixture,
   validIncidentListTransportFixture,
 } from "../../testing/incident-fixtures"
 import { decodeIncidentList } from "./decode-incident-list"
@@ -23,6 +24,19 @@ describe("decodeIncidentList", () => {
 
   it("preserves a null operational priority", () => {
     expect(decodeIncidentList(validIncidentListTransportFixture).items[1]?.priority).toBeNull()
+  })
+
+  it("preserves a second incident and category permutation", () => {
+    const result = decodeIncidentList(reorderedIncidentListTransportFixture)
+
+    expect(result.items.map(({ incidentId }) => incidentId)).toEqual([
+      "00000000-0000-4000-8000-000000000000",
+      "ffffffff-ffff-4fff-8fff-ffffffffffff",
+    ])
+    expect(result.items.map(({ categories }) => categories)).toEqual([
+      ["flooding", "other"],
+      ["blocked_drain", "street_light"],
+    ])
   })
 
   it.each(["critical", "high", "medium", "low"] as const)(
@@ -122,6 +136,42 @@ describe("decodeIncidentList", () => {
   )
 
   it.each([
+    ["lowercase t and z", "2026-07-16t03:00:00z"],
+    ["leap-second 60", "2026-12-31T23:59:60Z"],
+  ] as const)("accepts the RFC3339 %s form without changing it", (_description, dateTime) => {
+    const value = {
+      ...validIncidentListTransportFixture,
+      items: [
+        {
+          ...firstTransportIncident,
+          earliest_reported_at: dateTime,
+          latest_reported_at: dateTime,
+        },
+      ],
+      total: 1,
+    }
+
+    const result = decodeIncidentList(value).items[0]
+    expect(result?.earliestReportedAt).toBe(dateTime)
+    expect(result?.latestReportedAt).toBe(dateTime)
+  })
+
+  it("rejects an impossible calendar day", () => {
+    const value = {
+      ...validIncidentListTransportFixture,
+      items: [
+        {
+          ...firstTransportIncident,
+          latest_reported_at: "2026-02-30T03:00:00Z",
+        },
+      ],
+      total: 1,
+    }
+
+    expect(() => decodeIncidentList(value)).toThrow(TypeError)
+  })
+
+  it.each([
     {
       ...firstTransportIncident,
       centroid: { ...firstTransportIncident.centroid, latitude: Number.NaN },
@@ -135,6 +185,57 @@ describe("decodeIncidentList", () => {
     expect(() =>
       decodeIncidentList({ ...validIncidentListTransportFixture, items: [incident], total: 1 }),
     ).toThrow(TypeError)
+  })
+
+  it.each([
+    [
+      "items",
+      {
+        ...validIncidentListTransportFixture,
+        items: new Array<unknown>(1),
+        total: 1,
+      },
+    ],
+    [
+      "category_summary",
+      {
+        ...validIncidentListTransportFixture,
+        items: [{ ...firstTransportIncident, category_summary: new Array<unknown>(1) }],
+        total: 1,
+      },
+    ],
+    [
+      "priority reasons",
+      {
+        ...validIncidentListTransportFixture,
+        items: [
+          {
+            ...firstTransportIncident,
+            priority: { ...firstTransportIncident.priority, reasons: new Array<unknown>(1) },
+          },
+        ],
+        total: 1,
+      },
+    ],
+    [
+      "conflict_reasons",
+      {
+        ...validIncidentListTransportFixture,
+        items: [{ ...firstTransportIncident, conflict_reasons: new Array<unknown>(1) }],
+        total: 1,
+      },
+    ],
+  ])("rejects a sparse %s array", (_field, value) => {
+    expect(() => decodeIncidentList(value)).toThrow(TypeError)
+  })
+
+  it("rejects a symbol-keyed extra own field", () => {
+    const value = {
+      ...validIncidentListTransportFixture,
+      [Symbol("unexpected")]: true,
+    }
+
+    expect(() => decodeIncidentList(value)).toThrow(TypeError)
   })
 
   it.each([

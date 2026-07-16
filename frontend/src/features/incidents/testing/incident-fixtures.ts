@@ -38,6 +38,20 @@ export const validIncidentListTransportFixture = {
   total: 2,
 } as const
 
+export const reorderedIncidentListTransportFixture = {
+  ...validIncidentListTransportFixture,
+  items: [
+    {
+      ...validIncidentListTransportFixture.items[1],
+      category_summary: ["flooding", "other"],
+    },
+    {
+      ...validIncidentListTransportFixture.items[0],
+      category_summary: ["blocked_drain", "street_light"],
+    },
+  ],
+} as const
+
 export const incidentPageFixture = {
   items: [
     {

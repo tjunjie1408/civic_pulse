@@ -38,7 +38,7 @@ const PRIORITY_KEYS = ["level", "reasons", "policy_version"] as const satisfies 
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const ISO_DATE_TIME_PATTERN =
-  /^(\d{4})-(\d{2})-(\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/
+  /^(\d{4})-(\d{2})-(\d{2})[Tt](?:[01]\d|2[0-3]):[0-5]\d:(?:[0-5]\d|60)(?:\.\d+)?(?:[Zz]|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/
 
 function invalidResponse(): never {
   throw new TypeError("Invalid incident-list response")
@@ -52,9 +52,21 @@ function hasExactKeys(
     typeof value === "object" &&
     value !== null &&
     !Array.isArray(value) &&
-    Object.keys(value).length === expectedKeys.length &&
+    Reflect.ownKeys(value).length === expectedKeys.length &&
     expectedKeys.every((key) => Object.hasOwn(value, key))
   )
+}
+
+function isDenseArray(value: unknown): value is unknown[] {
+  if (!Array.isArray(value)) {
+    return false
+  }
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.hasOwn(value, index)) {
+      return false
+    }
+  }
+  return true
 }
 
 function requireFiniteNumber(value: unknown): number {
@@ -102,7 +114,7 @@ function requireIsoDateTime(value: unknown): string {
 }
 
 function decodeStringArray(value: unknown): readonly string[] {
-  if (!Array.isArray(value)) {
+  if (!isDenseArray(value)) {
     return invalidResponse()
   }
   return value.map(requireString)
@@ -123,7 +135,7 @@ function decodeCategory(value: unknown): IncidentCategory {
 }
 
 function decodeCategories(value: unknown): readonly IncidentCategory[] {
-  if (!Array.isArray(value)) {
+  if (!isDenseArray(value)) {
     return invalidResponse()
   }
   return value.map(decodeCategory)
@@ -196,7 +208,7 @@ function decodeIncident(value: unknown): IncidentSummary {
 }
 
 export function decodeIncidentList(value: unknown): IncidentPage {
-  if (!hasExactKeys(value, PAGE_KEYS) || !Array.isArray(value.items)) {
+  if (!hasExactKeys(value, PAGE_KEYS) || !isDenseArray(value.items)) {
     return invalidResponse()
   }
   return {
