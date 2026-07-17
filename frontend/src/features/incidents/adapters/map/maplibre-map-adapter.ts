@@ -119,7 +119,9 @@ export function createMapLibreIncidentMapRenderer(
     map = createMap({
       container,
       style: FALLBACK_MAP_STYLE,
-      center: options.center ?? [103.8198, 1.3521],
+      // Current operational seed data is centered on the Kuala Lumpur region.
+      // Dynamic bounds fitting is intentionally deferred to the next map slice.
+      center: options.center ?? [101.52, 3.08],
       zoom: options.zoom ?? 11,
       attributionControl: false,
     })
