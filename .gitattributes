@@ -1,0 +1,2 @@
+# Benchmark manifests hash fixture bytes; checkout conversion would invalidate them.
+benchmarks/*.json text eol=lf
