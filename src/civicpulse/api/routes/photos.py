@@ -57,7 +57,18 @@ async def upload_photo(
         raise ApiError(code=exc.code, message=str(exc), status_code=415) from exc
     except PhotoTooLarge as exc:
         raise ApiError(code=exc.code, message=str(exc), status_code=413) from exc
-    repository.add_photo(stored, created_at=datetime.now(UTC))
+    try:
+        repository.add_photo(stored, created_at=datetime.now(UTC))
+    except Exception as exc:
+        try:
+            store.remove(stored.stored_name)
+        except (OSError, PhotoNotFound):
+            pass
+        raise ApiError(
+            code="internal_error",
+            message="An unexpected internal error occurred.",
+            status_code=500,
+        ) from exc
     return PhotoUploadResponse(
         photo_id=stored.photo_id,
         media_type=stored.media_type,

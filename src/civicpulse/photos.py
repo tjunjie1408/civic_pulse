@@ -130,6 +130,11 @@ class PhotoStore:
             raise PhotoNotFound
         return path
 
+    def remove(self, stored_name: str) -> None:
+        """Remove a server-owned photo file when metadata persistence fails."""
+        path = self.resolve(stored_name)
+        path.unlink()
+
     def purge(self) -> int:
         """Delete stored photo files; used by the admin demo reset."""
         if not self.directory.is_dir():

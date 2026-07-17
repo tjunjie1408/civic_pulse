@@ -1,14 +1,21 @@
+from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
 from fastapi.testclient import TestClient
 
 from civicpulse.api import create_app
-from civicpulse.photos import PhotoStore
+from civicpulse.photos import MAX_PHOTO_BYTES, PhotoStore, StoredPhoto
 from civicpulse.repository import SQLiteRepository
 
 JPEG_BYTES = b"\xff\xd8\xff\xe0" + b"\x00" * 64
 PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
+
+
+class FailingPhotoRepository(SQLiteRepository):
+    def add_photo(self, photo: StoredPhoto, created_at: datetime) -> None:
+        del photo, created_at
+        raise RuntimeError("database write failed")
 
 
 def make_client(tmp_path: Path) -> TestClient:
@@ -58,11 +65,70 @@ def test_upload_rejects_unsupported_content(tmp_path: Path) -> None:
     assert upload.json()["error"]["code"] == "unsupported_photo_type"
 
 
+def test_upload_rejects_oversized_content(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    oversized = b"\xff\xd8\xff" + b"\x00" * MAX_PHOTO_BYTES
+
+    upload = client.post(
+        "/api/v1/photos",
+        files={"file": ("evidence.jpg", oversized, "image/jpeg")},
+    )
+
+    assert upload.status_code == 413
+    assert upload.json()["error"]["code"] == "photo_too_large"
+
+
+def test_repository_failure_removes_saved_file_and_preserves_error_response(tmp_path: Path) -> None:
+    repository = FailingPhotoRepository(tmp_path / "photos.db")
+    repository.initialize()
+    store = PhotoStore(tmp_path / "uploads")
+    client = TestClient(create_app(repository=repository, photo_store=store))
+
+    response = client.post(
+        "/api/v1/photos",
+        files={"file": ("evidence.jpg", JPEG_BYTES, "image/jpeg")},
+    )
+
+    assert response.status_code == 500
+    assert response.json()["error"]["code"] == "internal_error"
+    assert "database write failed" not in response.text
+    assert list((tmp_path / "uploads").iterdir()) == []
+
+
 def test_fetch_unknown_photo_returns_404(tmp_path: Path) -> None:
     client = make_client(tmp_path)
     response = client.get("/api/v1/photos/30000000-0000-0000-0000-000000000001")
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "photo_not_found"
+
+
+def test_fetch_metadata_without_file_returns_404(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    upload = client.post(
+        "/api/v1/photos",
+        files={"file": ("evidence.jpg", JPEG_BYTES, "image/jpeg")},
+    )
+    photo_id = upload.json()["photo_id"]
+    next((tmp_path / "uploads").iterdir()).unlink()
+
+    response = client.get(f"/api/v1/photos/{photo_id}")
+
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "photo_not_found"
+
+
+def test_successful_fetch_sets_inline_content_disposition(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    upload = client.post(
+        "/api/v1/photos",
+        files={"file": ("evidence.jpg", JPEG_BYTES, "image/jpeg")},
+    )
+    photo_id = upload.json()["photo_id"]
+
+    response = client.get(f"/api/v1/photos/{photo_id}")
+
+    assert response.status_code == 200
+    assert response.headers["content-disposition"] == "inline"
 
 
 def test_photo_routes_require_configured_store(tmp_path: Path) -> None:
