@@ -1,2 +1,3 @@
 # Benchmark manifests hash fixture bytes; checkout conversion would invalidate them.
 benchmarks/*.json text eol=lf
+frontend/src/features/incidents/adapters/http/generated/openapi.d.ts text eol=lf
