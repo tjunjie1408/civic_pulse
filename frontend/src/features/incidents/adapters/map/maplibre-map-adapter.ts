@@ -63,6 +63,13 @@ function featureCollection(cells: readonly HeatCell[]) {
   }
 }
 
+function withAlpha(hexColor: string, alpha: number): string {
+  const red = Number.parseInt(hexColor.slice(1, 3), 16)
+  const green = Number.parseInt(hexColor.slice(3, 5), 16)
+  const blue = Number.parseInt(hexColor.slice(5, 7), 16)
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`
+}
+
 function heatLayer(id: string, color: string, filter?: readonly unknown[]) {
   return {
     id,
@@ -82,7 +89,9 @@ function heatLayer(id: string, color: string, filter?: readonly unknown[]) {
         0,
         "rgba(0, 0, 0, 0)",
         0.01,
-        color,
+        withAlpha(color, 0.25),
+        0.35,
+        withAlpha(color, 0.65),
         1,
         color,
       ],
