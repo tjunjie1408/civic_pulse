@@ -47,6 +47,19 @@ def test_purge_photos_clears_all_rows(tmp_path: Path) -> None:
     assert repository.purge_photos() == 0
 
 
+def test_reset_purges_photo_rows_and_files(tmp_path: Path) -> None:
+    from civicpulse.photos import PhotoStore
+
+    repository = make_repository(tmp_path)
+    store = PhotoStore(tmp_path / "uploads")
+    stored = store.save(b"\xff\xd8\xff\xe0" + b"\x00" * 32)
+    repository.add_photo(stored, created_at=NOW)
+
+    assert repository.purge_photos() == 1
+    assert store.purge() == 1
+    assert repository.get_photo(stored.photo_id) is None
+
+
 def test_initialize_is_idempotent_with_photos_table(tmp_path: Path) -> None:
     repository = make_repository(tmp_path)
     repository.add_photo(stored_photo(), created_at=NOW)

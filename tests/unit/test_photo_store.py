@@ -62,6 +62,28 @@ def test_purge_removes_stored_files(tmp_path: Path) -> None:
     assert store.purge() == 0
 
 
+def test_service_reset_purges_photos(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from unittest.mock import MagicMock
+
+    from civicpulse.service import CivicPulseService
+
+    del tmp_path
+    service = CivicPulseService.__new__(CivicPulseService)
+    service.repository = MagicMock()
+    service.photo_store = MagicMock()
+    monkeypatch.setattr(
+        CivicPulseService, "_import_seed", lambda self, path: "seed-result", raising=True
+    )
+
+    result = service.reset_seed("data/seed_complaints.json")
+
+    assert result == "seed-result"
+    service.repository.purge_photos.assert_called_once()
+    service.photo_store.purge.assert_called_once()
+
+
 def test_health_check_creates_and_probes_directory(tmp_path: Path) -> None:
     store = PhotoStore(tmp_path / "uploads")
     store.health_check()

@@ -34,6 +34,7 @@ def runtime_settings(tmp_path: Path) -> RuntimeSettings:
         database_path=tmp_path / "civicpulse.db",
         seed_path=Path("data/seed_complaints.json"),
         sensitive_locations_path=Path("data/sensitive_locations.json"),
+        uploads_path=tmp_path / "uploads",
     )
 
 
@@ -43,6 +44,7 @@ def test_runtime_settings_read_server_owned_paths_and_safe_reset_flag(tmp_path: 
             "CIVICPULSE_DB_PATH": str(tmp_path / "demo.db"),
             "CIVICPULSE_SEED_PATH": "approved/seed.json",
             "CIVICPULSE_SENSITIVE_LOCATIONS_PATH": "approved/locations.json",
+            "CIVICPULSE_UPLOADS_PATH": "approved/uploads",
             "CIVICPULSE_ADMIN_RESET_ENABLED": "true",
         }
     )
@@ -50,6 +52,7 @@ def test_runtime_settings_read_server_owned_paths_and_safe_reset_flag(tmp_path: 
     assert settings.database_path == tmp_path / "demo.db"
     assert settings.seed_path == Path("approved/seed.json")
     assert settings.sensitive_locations_path == Path("approved/locations.json")
+    assert settings.uploads_path == Path("approved/uploads")
     assert settings.admin_reset_enabled is True
 
 
@@ -75,10 +78,14 @@ def test_runtime_composes_ready_api_from_empty_database(tmp_path: Path) -> None:
 
     assert response.status_code == 200
     assert response.json()["core_ready"] is True
+    assert response.json()["photo_provider"]["status"] == "healthy"
     assert len(runtime.repository.list_complaints()) == 120
     assert runtime.app.state.service is runtime.service
     assert runtime.app.state.repository is runtime.repository
     assert runtime.app.state.incident_query_service is runtime.incident_query_service
+    assert runtime.app.state.photo_store is runtime.service.photo_store
+    assert runtime.settings.uploads_path == tmp_path / "uploads"
+    assert runtime.settings.uploads_path.is_dir()
     assert runtime.startup_spans["readiness_probe"] >= 0.0
     assert runtime.startup_spans["runtime_composition_total"] >= sum(
         runtime.startup_spans[name]
