@@ -58,6 +58,17 @@ class ComplaintResponse(DashboardModel):
     photo_path: str | None = None
 
 
+class ComplaintSummaryResponse(DashboardModel):
+    complaint_id: UUID
+    text: str
+    category: Category
+    latitude: float
+    longitude: float
+    reported_at: datetime
+    photo_available: bool
+    photo_url: str | None
+
+
 class ComplaintCreateRequest(DashboardModel):
     text: str = Field(min_length=3, max_length=2000)
     latitude: float = Field(ge=-90, le=90)
@@ -183,11 +194,18 @@ class IncidentSummaryResponse(DashboardModel):
     conflict_reasons: list[str]
 
 
+class IncidentEvidencePreviewResponse(DashboardModel):
+    items: list[ComplaintSummaryResponse]
+    total: int
+    has_more: bool
+
+
 class IncidentDetailResponse(IncidentSummaryResponse):
     complaint_ids: list[UUID]
     review_candidate_ids: list[UUID]
     confirmed_edges: list[RelationshipEdgeResponse]
     review_candidates: list[ReviewCandidateResponse]
+    confirmed_reports: IncidentEvidencePreviewResponse
 
 
 class IncidentListResponse(DashboardModel):

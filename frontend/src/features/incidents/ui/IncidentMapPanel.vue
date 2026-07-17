@@ -31,19 +31,10 @@ const CATEGORY_OPTIONS: readonly { readonly value: IncidentCategory; readonly la
   { value: "other", label: "Other" },
 ]
 
-const CATEGORY_COLORS: Readonly<Record<IncidentCategory, string>> = Object.freeze({
-  flooding: "#1677a8",
-  blocked_drain: "#267f86",
-  pothole: "#a4772d",
-  rubbish: "#883f4a",
-  street_light: "#5b5b88",
-  other: "#64748b",
-})
 
 const selectedValue = ref<"all" | IncidentCategory>("all")
 const mapContainer = ref<HTMLElement | null>(null)
 const rendererMounted = ref(false)
-const renderStrategy = ref<"category-heat" | "neutral-density">("neutral-density")
 const mapLifecycle = ref<MapLifecycleState>("loading")
 
 let unsubscribeSelect: (() => void) | undefined
@@ -57,9 +48,7 @@ const selectedMode = computed<HeatmapMode>(() =>
 )
 const cells = computed(() => buildHeatCells(props.incidents, selectedMode.value))
 const isEmpty = computed(() => cells.value.length === 0)
-const showNeutralFallback = computed(
-  () => selectedMode.value.kind === "all" && renderStrategy.value === "neutral-density",
-)
+const isMapLoading = computed(() => mapLifecycle.value === "loading")
 const isMapDegraded = computed(() => mapLifecycle.value === "degraded")
 const isMapRecovering = computed(() => mapLifecycle.value === "recovering")
 const handleResize = (): void => renderer.resize()
@@ -68,7 +57,7 @@ function renderMap(): void {
   if (!rendererMounted.value) {
     return
   }
-  renderStrategy.value = renderer.render({
+  renderer.render({
     incidents: props.incidents,
     cells: cells.value,
     mode: selectedMode.value,
@@ -147,7 +136,21 @@ onBeforeUnmount(() => {
         data-map-container
         role="img"
         aria-label="Confirmed incident density map"
+        :aria-busy="isMapLoading"
       />
+      <div
+        class="incident-map-panel__density-legend"
+        role="group"
+        aria-label="Report density"
+      >
+        <span>Low</span>
+        <span
+          class="incident-map-panel__density-gradient"
+          data-density-gradient
+          aria-hidden="true"
+        />
+        <span>High</span>
+      </div>
       <p
         v-if="isEmpty"
         class="incident-map-panel__empty"
@@ -159,50 +162,28 @@ onBeforeUnmount(() => {
       </p>
     </div>
 
-    <p
-      v-if="showNeutralFallback"
-      class="incident-map-panel__notice"
-      data-map-status
-      role="status"
-    >
-      Neutral total-density is shown in All mode. Select a category to see its approved color.
-    </p>
 
     <div
-      v-if="isMapDegraded || isMapRecovering"
+      v-if="isMapLoading || isMapDegraded || isMapRecovering"
       class="incident-map-panel__notice incident-map-panel__notice--lifecycle"
       data-map-status
       role="status"
     >
-      <span v-if="isMapDegraded">Base map unavailable. Incident overlays remain available.</span>
+      <span
+        v-if="isMapLoading"
+        data-map-loading
+      >Loading street map.</span>
+      <span v-else-if="isMapDegraded">Base map unavailable. Incident overlays remain available.</span>
       <span v-else>Restoring base map.</span>
       <button
         v-if="isMapDegraded"
         type="button"
+        class="incident-map-panel__retry"
         data-map-retry
         @click="renderer.retry"
       >
         Retry map
       </button>
     </div>
-
-    <ul
-      class="incident-map-panel__legend"
-      aria-label="Incident category colors"
-    >
-      <li
-        v-for="category in CATEGORY_OPTIONS"
-        :key="category.value"
-        :data-category="category.value"
-        :data-color="CATEGORY_COLORS[category.value]"
-      >
-        <span
-          class="incident-map-panel__swatch"
-          :style="{ backgroundColor: CATEGORY_COLORS[category.value] }"
-          aria-hidden="true"
-        />
-        <span>{{ category.label }}</span>
-      </li>
-    </ul>
   </section>
 </template>

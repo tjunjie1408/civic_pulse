@@ -9,6 +9,7 @@ from civicpulse.api.dependencies import (
     AppSettingsProtocol,
     get_app_settings,
     get_optional_service,
+    get_repository,
     get_service,
 )
 from civicpulse.api.dto.common import ApiErrorResponse
@@ -30,7 +31,8 @@ from civicpulse.domain import (
     SubmissionResult,
 )
 from civicpulse.incident_query import IncidentRead
-from civicpulse.repository import DatabaseBusy
+from civicpulse.photos import photo_path_for
+from civicpulse.repository import DatabaseBusy, SQLiteRepository
 from civicpulse.service import CivicPulseService, IdempotencyConflict, SeedResult
 
 router = APIRouter(tags=["mutations"])
@@ -105,6 +107,7 @@ def _submission_response(result: SubmissionResult) -> ComplaintSubmissionRespons
 def submit_complaint(
     request: ComplaintCreateRequest,
     service: CivicPulseService = Depends(get_service),  # noqa: B008
+    repository: SQLiteRepository = Depends(get_repository),  # noqa: B008
     idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=128),
 ) -> ComplaintSubmissionResponse:
     key = idempotency_key.strip()
@@ -115,8 +118,33 @@ def submit_complaint(
             status_code=422,
             details={"field": "Idempotency-Key"},
         )
+    resolved_photo_path = request.photo_path
+    if request.photo_id is not None:
+        try:
+            record = repository.get_photo(request.photo_id)
+        except DatabaseBusy as exc:
+            raise ApiError(
+                code="database_busy",
+                message="The local database is busy; retry the operation.",
+                status_code=503,
+            ) from exc
+        if record is None:
+            raise ApiError(
+                code="unknown_photo",
+                message="The referenced photo upload was not found.",
+                status_code=422,
+                details={"photo_id": str(request.photo_id)},
+            )
+        resolved_photo_path = photo_path_for(record)
     try:
-        payload = ComplaintInput.model_validate(request.model_dump())
+        payload = ComplaintInput(
+            text=request.text,
+            latitude=request.latitude,
+            longitude=request.longitude,
+            reported_at=request.reported_at,
+            category=request.category,
+            photo_path=resolved_photo_path,
+        )
     except ValidationError as exc:
         raise ApiError(
             code="validation_error",

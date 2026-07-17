@@ -14,5 +14,6 @@ createApp(App as Component, {
   loadReviewDetail: services.loadReviewDetail,
   resolveReview: services.resolveReview,
   submitComplaint: services.submitComplaint,
+  uploadPhoto: services.uploadPhoto,
   createIncidentMapRenderer: services.createIncidentMapRenderer,
 }).mount("#app")

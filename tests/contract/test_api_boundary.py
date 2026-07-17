@@ -64,7 +64,7 @@ def test_application_factory_is_side_effect_free_and_openapi_is_stable(monkeypat
         if isinstance(operation, dict) and "operationId" in operation
     ]
 
-    assert schema["info"]["version"] == "1.0.0"
+    assert schema["info"]["version"] == "1.1.0"
     assert "/api/v1/health/live" in schema["paths"]
     assert len(operation_ids) == len(set(operation_ids))
 

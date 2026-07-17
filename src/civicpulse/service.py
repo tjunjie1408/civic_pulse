@@ -36,6 +36,7 @@ from civicpulse.embeddings import EmbeddingProvider, cosine_similarity
 from civicpulse.geo import haversine_metres, temporal_gap_seconds
 from civicpulse.matching import match_pair
 from civicpulse.normalize import normalize_text
+from civicpulse.photos import PhotoStore
 from civicpulse.priority import assess_priority
 from civicpulse.repository import SQLiteRepository
 from pydantic import Field
@@ -130,6 +131,7 @@ class CivicPulseService:
         sensitive_locations: Sequence[SensitiveLocation] = (),
         *,
         photo_healthcheck: Callable[[], None] | None = None,
+        photo_store: PhotoStore | None = None,
         embedding_verified: bool = False,
     ) -> None:
         self.repository = repository
@@ -138,6 +140,7 @@ class CivicPulseService:
         self.embedding_provider = embedding_provider
         self.sensitive_locations = tuple(sensitive_locations)
         self.photo_healthcheck = photo_healthcheck
+        self.photo_store = photo_store
         # Runtime composition sets this only after a local-cache probe and dimension check.
         self.embedding_verified = embedding_verified
 
@@ -399,7 +402,11 @@ class CivicPulseService:
         return self._import_seed(path)
 
     def reset_seed(self, path: str | Path) -> SeedResult:
-        return self._import_seed(path)
+        result = self._import_seed(path)
+        self.repository.purge_photos()
+        if self.photo_store is not None:
+            self.photo_store.purge()
+        return result
 
     def get_review(self, review_id: UUID) -> ReviewRead | None:
         review = self.repository.get_review(review_id)

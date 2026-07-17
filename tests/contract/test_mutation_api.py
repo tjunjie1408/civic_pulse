@@ -54,6 +54,12 @@ def priority(level: PriorityLevel = PriorityLevel.LOW) -> SimpleNamespace:
     )
 
 
+class FakePhotoRepository:
+    def get_photo(self, photo_id: UUID) -> None:
+        del photo_id
+        return None
+
+
 class FakeMutationService:
     def __init__(
         self,
@@ -65,6 +71,7 @@ class FakeMutationService:
         self.failure = failure
         self.reset_failure = reset_failure
         self.incident_status = incident_status
+        self.repository = FakePhotoRepository()
         self.submissions: list[tuple[object, str]] = []
         self.reset_paths: list[str] = []
 

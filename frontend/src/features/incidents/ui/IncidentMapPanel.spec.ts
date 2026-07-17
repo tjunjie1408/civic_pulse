@@ -108,19 +108,18 @@ describe("IncidentMapPanel", () => {
     expect(renderer.disposeSpy).toHaveBeenCalledOnce()
   })
 
-  it("defaults to All and explains neutral total-density fallback", () => {
+  it("defaults to All", () => {
     const renderer = rendererSpy("neutral-density")
     const wrapper = mount(IncidentMapPanel, {
       props: { incidents: [floodingIncident], createRenderer: () => renderer },
     })
 
     expect(wrapper.get("select").element.value).toBe("all")
-    expect(wrapper.text()).toContain("Neutral total-density")
     expect(wrapper.text()).toContain("Flooding")
     expect(renderer.renders.at(-1)?.mode).toEqual({ kind: "all" })
   })
 
-  it("selecting Flooding rebuilds cells independently and exposes the blue legend item", async () => {
+  it("selecting Flooding rebuilds cells independently", async () => {
     const renderer = rendererSpy("neutral-density")
     const wrapper = mount(IncidentMapPanel, {
       props: { incidents: [floodingIncident, drainIncident], createRenderer: () => renderer },
@@ -132,8 +131,22 @@ describe("IncidentMapPanel", () => {
     expect(renderer.renders.at(-1)?.cells).toEqual([
       expect.objectContaining({ dominantCategory: "flooding" }),
     ])
-    expect(wrapper.get('[data-category="flooding"]').attributes("data-color")).toBe("#1677a8")
-    expect(wrapper.text()).not.toContain("Neutral total-density")
+  })
+
+  it("renders a density legend independent of category filtering", async () => {
+    const renderer = rendererSpy("neutral-density")
+    const wrapper = mount(IncidentMapPanel, {
+      props: { incidents: [floodingIncident, drainIncident], createRenderer: () => renderer },
+    })
+
+    const legend = wrapper.get('[aria-label="Report density"]')
+    expect(legend.attributes("role")).toBe("group")
+    expect(legend.text()).toContain("Low")
+    expect(legend.text()).toContain("High")
+    expect(wrapper.find('[aria-label="Report density"] [data-density-gradient]').exists()).toBe(true)
+
+    await wrapper.get("select").setValue("flooding")
+    expect(wrapper.findAll('[aria-label="Report density"]')).toHaveLength(1)
   })
 
   it("keeps loading, empty, and recoverable queue states usable when the map has no cells", () => {
@@ -145,6 +158,21 @@ describe("IncidentMapPanel", () => {
     expect(wrapper.get("[data-map-status]").attributes("role")).toBe("status")
   })
 
+  it("announces the initial online map load until the style is ready", async () => {
+    const renderer = rendererSpy()
+    const wrapper = mount(IncidentMapPanel, {
+      props: { incidents: [floodingIncident], createRenderer: () => renderer },
+    })
+
+    expect(wrapper.get("[data-map-container]").attributes("aria-busy")).toBe("true")
+    expect(wrapper.get("[data-map-loading]").text()).toContain("Loading street map")
+
+    renderer.emitLifecycle("ready")
+    await nextTick()
+
+    expect(wrapper.get("[data-map-container]").attributes("aria-busy")).toBe("false")
+    expect(wrapper.find("[data-map-loading]").exists()).toBe(false)
+  })
   it("forwards map selection and preview events to the queue page", async () => {
     const renderer = rendererSpy()
     const wrapper = mount(IncidentMapPanel, {
@@ -169,7 +197,9 @@ describe("IncidentMapPanel", () => {
     await nextTick()
 
     expect(wrapper.text()).toContain("Base map unavailable")
-    expect(wrapper.get("[data-map-retry]").attributes("type")).toBe("button")
+    const retry = wrapper.get("[data-map-retry]")
+    expect(retry.classes()).toContain("incident-map-panel__retry")
+    expect(retry.attributes("type")).toBe("button")
     await wrapper.get("[data-map-retry]").trigger("click")
     expect(renderer.retrySpy).toHaveBeenCalledOnce()
 

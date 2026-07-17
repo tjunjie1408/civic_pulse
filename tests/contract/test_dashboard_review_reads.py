@@ -106,6 +106,22 @@ def _incident_detail() -> dict[str, object]:
         "review_candidate_ids": ["00000000-0000-0000-0000-000000000002"],
         "confirmed_edges": [],
         "review_candidates": [],
+        "confirmed_reports": {
+            "items": [
+                {
+                    "complaint_id": "00000000-0000-0000-0000-000000000001",
+                    "text": "Pothole by the market",
+                    "category": "pothole",
+                    "latitude": 1.3,
+                    "longitude": 103.8,
+                    "reported_at": "2026-07-13T00:00:00Z",
+                    "photo_available": False,
+                    "photo_url": None,
+                }
+            ],
+            "total": 1,
+            "has_more": False,
+        },
     }
 
 

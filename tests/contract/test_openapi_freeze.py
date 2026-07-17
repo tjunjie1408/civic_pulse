@@ -16,6 +16,8 @@ EXPECTED_PATHS = {
     "/api/v1/incidents/{incident_id}",
     "/api/v1/complaints",
     "/api/v1/admin/reset",
+    "/api/v1/photos",
+    "/api/v1/photos/{photo_id}",
     "/api/v1/reviews",
     "/api/v1/reviews/{review_id}",
     "/api/v1/reviews/{review_id}/approve",
@@ -66,7 +68,7 @@ def test_openapi_metadata_paths_and_operation_ids_are_frozen() -> None:
         if isinstance(operation, dict) and "operationId" in operation
     ]
 
-    assert payload["info"] == {"title": "CivicPulse-lite API", "version": "1.0.0"}
+    assert payload["info"] == {"title": "CivicPulse-lite API", "version": "1.1.0"}
     assert set(payload["paths"]) == EXPECTED_PATHS
     assert all(path.startswith("/api/v1/") for path in payload["paths"])
     assert len({operation["operationId"] for operation in operations}) == len(operations)
@@ -88,6 +90,30 @@ def test_complaint_submission_contract_preserves_header_and_errors() -> None:
     )
     assert {"409", "422", "500"}.issubset(error_response_codes(operation))
     assert_error_schema(operation, "409")
+
+
+def test_photo_fetch_contract_preserves_binary_media_and_errors() -> None:
+    operation = document()["paths"]["/api/v1/photos/{photo_id}"]["get"]
+    success_content = operation["responses"]["200"]["content"]
+
+    assert set(success_content) == {"image/jpeg", "image/png"}
+    for media_type in success_content.values():
+        assert media_type["schema"] == {"format": "binary", "type": "string"}
+    assert {"404", "422", "500", "503"}.issubset(error_response_codes(operation))
+    assert_error_schema(operation, "404")
+    assert_error_schema(operation, "422")
+    assert_error_schema(operation, "500")
+    assert_error_schema(operation, "503")
+
+
+def test_photo_upload_contract_publishes_runtime_failure_errors() -> None:
+    operation = document()["paths"]["/api/v1/photos"]["post"]
+
+    assert {"413", "415", "422", "500", "503"}.issubset(
+        error_response_codes(operation)
+    )
+    assert_error_schema(operation, "500")
+    assert_error_schema(operation, "503")
 
 
 def test_review_resolution_contract_preserves_payload_errors_and_transition_fields() -> None:

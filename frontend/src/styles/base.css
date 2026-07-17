@@ -214,8 +214,9 @@ button {
 .incident-map-panel__map-wrap {
   position: relative;
   min-height: 18rem;
-  border-bottom: 1px solid var(--divider);
-  background: var(--signal-canvas);
+  overflow: hidden;
+  border: 1px solid var(--divider);
+  background: #dfe8ea;
 }
 
 .incident-map-panel__map {
@@ -249,43 +250,45 @@ button {
   gap: var(--space-3);
 }
 
-.incident-map-panel__notice--lifecycle button {
-  flex: 0 0 auto;
-  padding: 0.25rem 0.55rem;
-  border: 1px solid var(--divider);
-  border-radius: 2px;
+.incident-map-panel__retry {
+  min-height: 2.75rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--civic-blue);
   background: var(--paper-white);
-  color: var(--ink);
+  color: var(--civic-blue);
   font: inherit;
-  font-size: var(--text-small);
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.incident-map-panel__legend {
+.incident-map-panel__retry:focus-visible {
+  outline: 2px solid var(--paper-white);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--civic-blue);
+}
+
+.incident-map-panel__density-legend {
+  position: absolute;
+  right: var(--space-3);
+  bottom: calc(var(--space-3) + 1.5rem);
+  z-index: 2;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-2) var(--space-4);
-  margin: 0;
-  padding: var(--space-4) var(--space-5);
-  list-style: none;
-  color: var(--slate);
-  font-size: var(--text-small);
-}
-
-.incident-map-panel__legend li {
-  display: flex;
+  grid-template-columns: auto minmax(7rem, 10rem) auto;
   align-items: center;
-  min-width: 0;
   gap: var(--space-2);
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgb(23 26 28 / 18%);
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 4px 16px rgb(23 26 28 / 12%);
+  color: var(--graphite);
+  font-size: var(--text-small);
+  font-weight: 700;
 }
 
-.incident-map-panel__swatch {
-  display: inline-block;
-  width: 0.65rem;
-  height: 0.65rem;
-  flex: 0 0 auto;
-  border-radius: 1px;
+.incident-map-panel__density-gradient {
+  height: 0.55rem;
+  background: linear-gradient(90deg, #2f80ed, #22b8a7, #f2c94c, #f2994a, #d64545);
 }
-
 .incident-queue-row {
   animation: row-reveal 220ms ease-out both;
 }
@@ -409,6 +412,14 @@ button {
   }
 }
 
+@media (max-width: 40rem) {
+  .incident-map-panel__density-legend {
+    right: var(--space-2);
+    bottom: 2rem;
+    grid-template-columns: auto minmax(5rem, 1fr) auto;
+    max-width: calc(100% - 2 * var(--space-2));
+  }
+}
 @media (max-width: 48rem) {
   .app-shell__header {
     align-items: flex-start;

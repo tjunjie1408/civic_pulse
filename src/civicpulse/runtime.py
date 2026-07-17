@@ -21,6 +21,7 @@ from civicpulse.embeddings import (
     SentenceTransformerProvider,
 )
 from civicpulse.incident_query import IncidentQueryService
+from civicpulse.photos import PhotoStore
 from civicpulse.repository import SQLiteRepository
 from civicpulse.service import CivicPulseService, SeedManifest
 
@@ -33,6 +34,7 @@ class RuntimeSettings(BaseModel):
     priority_policy_path: Path = Path("config/priority_policy.json")
     seed_path: Path = Path("data/seed_complaints.json")
     sensitive_locations_path: Path = Path("data/sensitive_locations.json")
+    uploads_path: Path = Path("data/uploads")
     admin_reset_enabled: bool = False
 
     @classmethod
@@ -61,6 +63,7 @@ class RuntimeSettings(BaseModel):
                     "data/sensitive_locations.json",
                 )
             ),
+            uploads_path=Path(source.get("CIVICPULSE_UPLOADS_PATH", "data/uploads")),
             admin_reset_enabled=raw_reset in {"true", "1"},
         )
 
@@ -131,12 +134,15 @@ def build_runtime(
     database_started = time.perf_counter()
     repository = SQLiteRepository(resolved.database_path)
     repository.initialize()
+    photo_store = PhotoStore(resolved.uploads_path)
     service = CivicPulseService(
         repository,
         matching_policy,
         priority_policy,
         provider,
         sensitive_locations,
+        photo_healthcheck=photo_store.health_check,
+        photo_store=photo_store,
         embedding_verified=True,
     )
     if not repository.list_complaints():
@@ -158,6 +164,7 @@ def build_runtime(
         repository=repository,
         health_service=service.health,
         incident_query_service=incident_query_service,
+        photo_store=photo_store,
     )
     bundle = RuntimeBundle(
         settings=resolved,

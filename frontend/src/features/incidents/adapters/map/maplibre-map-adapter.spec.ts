@@ -5,10 +5,11 @@ import type { HeatCell, HeatmapMode } from "../../domain/heatmap"
 import type { IncidentSummary } from "../../domain/incident"
 import {
   createMapLibreIncidentMapRenderer,
+  OPENFREEMAP_STYLE_URL,
   type MapFactory,
+  type MapFactoryOptions,
   type MapLike,
 } from "./maplibre-map-adapter"
-import { FALLBACK_MAP_STYLE } from "./fallback-style"
 
 type Listener = (...args: unknown[]) => void
 
@@ -87,8 +88,11 @@ function fakeMap(styleLoaded = true) {
     setStyle(style: unknown) {
       calls.push({ method: "setStyle", args: [style] })
     },
-    addLayer(layer: unknown) {
-      calls.push({ method: "addLayer", args: [layer] })
+    getStyle() {
+      return { layers: [{ id: "background", type: "background" }, { id: "road-label", type: "symbol" }] }
+    },
+    addLayer(layer: unknown, beforeId?: string) {
+      calls.push({ method: "addLayer", args: [layer, beforeId] })
       if (typeof layer === "object" && layer !== null && "id" in layer) {
         layers.set(String(layer.id), layer)
       }
@@ -117,7 +121,7 @@ function fakeMap(styleLoaded = true) {
   }
 }
 
-function factoryFor(fake: ReturnType<typeof fakeMap>, options: { style?: unknown }[] = []): MapFactory {
+function factoryFor(fake: ReturnType<typeof fakeMap>, options: MapFactoryOptions[] = []): MapFactory {
   return (mapOptions) => {
     options.push(mapOptions)
     return fake.map
@@ -127,16 +131,15 @@ function factoryFor(fake: ReturnType<typeof fakeMap>, options: { style?: unknown
 const allMode: HeatmapMode = { kind: "all" }
 
 describe("createMapLibreIncidentMapRenderer", () => {
-  it("mounts an inline fallback style without network tiles", () => {
+  it("uses the OpenFreeMap street style with attribution by default", () => {
     const fake = fakeMap()
-    const options: { style?: unknown }[] = []
+    const options: MapFactoryOptions[] = []
     const renderer = createMapLibreIncidentMapRenderer({ createMap: factoryFor(fake, options) })
 
     renderer.mount(document.createElement("div"))
 
-    expect(options[0]?.style).toEqual(FALLBACK_MAP_STYLE)
-    expect(FALLBACK_MAP_STYLE.sources).toEqual({})
-    expect(JSON.stringify(FALLBACK_MAP_STYLE)).not.toMatch(/https?:\/\//)
+    expect(options[0]?.style).toBe(OPENFREEMAP_STYLE_URL)
+    expect(options[0]?.attributionControl).toBe(true)
   })
 
   it("adds one deterministic GeoJSON source and disposes listeners", () => {
@@ -159,7 +162,7 @@ describe("createMapLibreIncidentMapRenderer", () => {
     expect(fake.calls.filter((call) => call.method === "remove")).toHaveLength(1)
   })
 
-  it("renders a single-category heat layer with its category color", () => {
+  it("renders a single-category heat layer with the density palette", () => {
     const fake = fakeMap()
     const renderer = createMapLibreIncidentMapRenderer({ createMap: factoryFor(fake) })
     renderer.mount(document.createElement("div"))
@@ -183,17 +186,38 @@ describe("createMapLibreIncidentMapRenderer", () => {
           ["heatmap-density"],
           0,
           "rgba(0, 0, 0, 0)",
-          0.01,
-          "rgba(22, 119, 168, 0.25)",
-          0.35,
-          "rgba(22, 119, 168, 0.65)",
+          0.15,
+          "#2F80ED",
+          0.38,
+          "#22B8A7",
+          0.6,
+          "#F2C94C",
+          0.8,
+          "#F2994A",
           1,
-          "#1677a8",
+          "#D64545",
         ],
+        "heatmap-opacity": 0.68,
       },
     })
   })
 
+  it("places density beneath the first symbol layer while keeping operational overlays above it", () => {
+    const fake = fakeMap()
+    const renderer = createMapLibreIncidentMapRenderer({ createMap: factoryFor(fake) })
+    renderer.mount(document.createElement("div"))
+
+    renderer.render(view())
+
+    const layerAdds = fake.calls.filter((call) => call.method === "addLayer")
+    expect(layerAdds[0]?.args[1]).toBe("road-label")
+    expect(layerAdds.slice(1).map((call) => call.args[1])).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    ])
+  })
   it("returns neutral fallback for All mode when exact category heat is unavailable", () => {
     const fake = fakeMap()
     const renderer = createMapLibreIncidentMapRenderer({ createMap: factoryFor(fake) })
@@ -213,13 +237,18 @@ describe("createMapLibreIncidentMapRenderer", () => {
           ["heatmap-density"],
           0,
           "rgba(0, 0, 0, 0)",
-          0.01,
-          "rgba(100, 116, 139, 0.25)",
-          0.35,
-          "rgba(100, 116, 139, 0.65)",
+          0.15,
+          "#2F80ED",
+          0.38,
+          "#22B8A7",
+          0.6,
+          "#F2C94C",
+          0.8,
+          "#F2994A",
           1,
-          "#64748b",
+          "#D64545",
         ],
+        "heatmap-opacity": 0.68,
       },
     })
   })
@@ -300,6 +329,14 @@ describe("createMapLibreIncidentMapRenderer", () => {
       expect.objectContaining({ id: "civicpulse-incident-centroids" }),
       expect.objectContaining({ id: "civicpulse-incident-selected" }),
     ])
+    expect(fake.layers.get("civicpulse-incident-selected")).toMatchObject({
+      paint: {
+        "circle-color": "#ffffff",
+        "circle-radius": 10,
+        "circle-stroke-color": "#171a1c",
+        "circle-stroke-width": 3,
+      },
+    })
   })
 
   it("emits map selection and preview events for incident centroids", () => {
@@ -334,6 +371,9 @@ describe("createMapLibreIncidentMapRenderer", () => {
 
     expect(states).toEqual(["loading", "ready", "degraded", "recovering", "ready"])
     expect(fake.calls.filter((call) => call.method === "setStyle")).toHaveLength(1)
+    expect(fake.calls.find((call) => call.method === "setStyle")?.args[0]).toBe(
+      OPENFREEMAP_STYLE_URL,
+    )
     expect(fake.calls.filter((call) => call.method === "addSource").length).toBeGreaterThanOrEqual(6)
     expect(fake.calls.filter((call) => call.method === "remove")).toHaveLength(0)
   })

@@ -51,6 +51,7 @@ export interface IncidentComplaintSummary {
   readonly longitude: number
   readonly reportedAt: string
   readonly photoAvailable: boolean
+  readonly photoUrl: string | null
 }
 
 export interface IncidentEvidencePreview {

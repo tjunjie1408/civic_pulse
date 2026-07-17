@@ -115,4 +115,7 @@ def test_seed_submit_review_approve_and_refresh_full_demo(tmp_path: Path) -> Non
     assert any("multi-report incident" in reason for reason in reasons)
     assert any("safety signal: active_flooding" in reason for reason in reasons)
     assert any("sensitive location" in reason for reason in reasons)
-    assert runtime.service.photo_healthcheck is None
+    assert runtime.service.photo_healthcheck.__self__ is runtime.service.photo_store
+    assert (
+        runtime.service.photo_healthcheck.__func__ is type(runtime.service.photo_store).health_check
+    )

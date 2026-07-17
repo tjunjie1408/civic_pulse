@@ -58,6 +58,7 @@ const COMPLAINT_KEYS = [
   "longitude",
   "reported_at",
   "photo_available",
+  "photo_url",
 ] as const satisfies readonly (keyof ComplaintTransport)[]
 const EVIDENCE_KEYS = ["items", "total", "has_more"] as const satisfies readonly (
   keyof IncidentDetailTransport["confirmed_reports"]
@@ -66,6 +67,8 @@ const EVIDENCE_KEYS = ["items", "total", "has_more"] as const satisfies readonly
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const ISO_DATE_TIME_PATTERN =
   /^(\d{4})-(\d{2})-(\d{2})[Tt](?:[01]\d|2[0-3]):[0-5]\d:(?:[0-5]\d|60)(?:\.\d+)?(?:[Zz]|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/
+const PHOTO_URL_PATTERN =
+  /^\/api\/v1\/photos\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function invalidResponse(): never {
   throw new TypeError("Invalid incident-detail response")
@@ -112,6 +115,13 @@ function requireUuid(value: unknown): string {
   const uuid = requireString(value)
   if (!UUID_PATTERN.test(uuid)) return invalidResponse()
   return uuid
+}
+
+function decodePhotoUrl(value: unknown): string | null {
+  if (value === null) return null
+  const url = requireString(value)
+  if (!PHOTO_URL_PATTERN.test(url)) return invalidResponse()
+  return url
 }
 
 function isLeapYear(year: number): boolean {
@@ -251,6 +261,7 @@ function decodeComplaintSummary(value: unknown): IncidentComplaintSummary {
     longitude: requireFiniteNumber(value.longitude),
     reportedAt: requireIsoDateTime(value.reported_at),
     photoAvailable: value.photo_available,
+    photoUrl: decodePhotoUrl(value.photo_url),
   }
 }
 
