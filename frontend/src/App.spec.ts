@@ -1,8 +1,12 @@
 import { flushPromises, mount } from "@vue/test-utils"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it } from "vitest"
 
+import type { IncidentDetailResult } from "./features/incidents/application/incident-detail-port"
 import type { IncidentListResult } from "./features/incidents/application/incident-list-port"
-import { incidentPageFixture } from "./features/incidents/testing/incident-fixtures"
+import {
+  incidentDetailFixture,
+  incidentPageFixture,
+} from "./features/incidents/testing/incident-fixtures"
 import App from "./App.vue"
 
 class FakeLoadIncidentQueue {
@@ -12,10 +16,40 @@ class FakeLoadIncidentQueue {
   }
 }
 
+class FakeLoadIncidentDetail {
+  execute(incidentId: string, signal: AbortSignal): Promise<IncidentDetailResult> {
+    void signal
+    return Promise.resolve(
+      incidentId === incidentDetailFixture.incidentId
+        ? { ok: true, detail: incidentDetailFixture }
+        : { ok: false, error: { kind: "missing" } },
+    )
+  }
+}
+
+class ControllableLoadIncidentDetail {
+  readonly requests: Array<{
+    readonly incidentId: string
+    readonly resolve: (result: IncidentDetailResult) => void
+  }> = []
+
+  execute(incidentId: string, signal: AbortSignal): Promise<IncidentDetailResult> {
+    void signal
+    return new Promise((resolve) => this.requests.push({ incidentId, resolve }))
+  }
+}
+
+afterEach(() => {
+  window.history.replaceState({}, "", "/")
+})
+
 describe("App shell", () => {
   it("provides the CivicPulse incident operations landmarks", async () => {
     const wrapper = mount(App, {
-      props: { loadIncidentQueue: new FakeLoadIncidentQueue() },
+      props: {
+        loadIncidentQueue: new FakeLoadIncidentQueue(),
+        loadIncidentDetail: new FakeLoadIncidentDetail(),
+      },
     })
     const banner = wrapper.find("header")
 
@@ -26,5 +60,47 @@ describe("App shell", () => {
     await flushPromises()
     expect(wrapper.get(".incident-queue").text()).toContain("Active incident queue")
     expect(wrapper.findAll(".incident-queue-row")).toHaveLength(2)
+    wrapper.unmount()
+  })
+
+  it("opens the native snapshot detail route from the expanded queue row", async () => {
+    const wrapper = mount(App, {
+      props: {
+        loadIncidentQueue: new FakeLoadIncidentQueue(),
+        loadIncidentDetail: new FakeLoadIncidentDetail(),
+      },
+    })
+    await flushPromises()
+
+    await wrapper.find(`[data-incident-id="${incidentDetailFixture.incidentId}"]`).trigger("click")
+    await flushPromises()
+    await wrapper.get("[data-open-full-incident]").trigger("click")
+
+    expect(window.location.pathname).toBe(`/incidents/${incidentDetailFixture.incidentId}`)
+    expect(wrapper.find("[data-incident-detail-ready]").exists()).toBe(true)
+    expect(wrapper.find(".incident-queue").exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it("returns a stale direct detail route to the queue without choosing a successor", async () => {
+    const detailLoader = new ControllableLoadIncidentDetail()
+    window.history.replaceState({}, "", `/incidents/${incidentDetailFixture.incidentId}`)
+    const wrapper = mount(App, {
+      props: {
+        loadIncidentQueue: new FakeLoadIncidentQueue(),
+        loadIncidentDetail: detailLoader,
+      },
+    })
+
+    expect(detailLoader.requests).toHaveLength(1)
+    detailLoader.requests[0]?.resolve({ ok: false, error: { kind: "missing" } })
+    await flushPromises()
+
+    expect(window.location.pathname).toBe("/")
+    expect(wrapper.get(".incident-queue").text()).toContain(
+      "no successor was selected automatically",
+    )
+    expect(wrapper.find("[data-incident-detail-ready]").exists()).toBe(false)
+    wrapper.unmount()
   })
 })

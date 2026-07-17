@@ -19,43 +19,43 @@ without guessing a successor snapshot.
 
 ### 1. Define the bounded evidence contract
 
-- Add strict response models for confirmed complaint summaries and a bounded preview envelope.
-- Include text, category, coordinates, report time, and a safe photo-availability signal only;
+- [x] Add strict response models for confirmed complaint summaries and a bounded preview envelope.
+- [x] Include text, category, coordinates, report time, and a safe photo-availability signal only;
   do not expose internal paths.
-- Add the preview to `IncidentDetailResponse` while keeping existing IDs, edges, and review
+- [x] Add the preview to `IncidentDetailResponse` while keeping existing IDs, edges, and review
   candidates intact.
-- Freeze the contract through backend tests and the OpenAPI snapshot.
+- [x] Freeze the contract through backend tests and the OpenAPI snapshot.
 
 ### 2. Implement the backend detail read
 
-- Select only complaints belonging to the requested current incident snapshot.
-- Apply one explicit preview limit and preserve repository/API order for the selected evidence.
-- Return `total` and `has_more`; do not let the UI fetch an unbounded detail payload.
-- Keep 404 behavior explicit for missing snapshot IDs.
+- [x] Select only complaints belonging to the requested current incident snapshot.
+- [x] Apply one explicit preview limit and preserve repository/API order for the selected evidence.
+- [x] Return `total` and `has_more`; do not let the UI fetch an unbounded detail payload.
+- [x] Keep 404 behavior explicit for missing snapshot IDs.
 
 ### 3. Add the frontend detail boundary and accordion
 
-- Add typed `IncidentDetail` evidence models and a runtime decoder for the new response.
-- Add a framework-free detail port/use case with loading, ready, missing, and recoverable error
+- [x] Add typed `IncidentDetail` evidence models and a runtime decoder for the new response.
+- [x] Add a framework-free detail port/use case with loading, ready, missing, and recoverable error
   states.
-- Make the queue an exactly-one-open accordion while retaining API incident order.
-- Render bounded confirmed report summaries and evidence-unavailable text without inventing
+- [x] Make the queue an exactly-one-open accordion while retaining API incident order.
+- [x] Render bounded confirmed report summaries and evidence-unavailable text without inventing
   descriptions, addresses, photos, or permanent case IDs.
 
 ### 4. Add the native detail route
 
-- Add `/incidents/:snapshotId` navigation through the existing composition root without adding a
+- [x] Add `/incidents/:snapshotId` navigation through the existing composition root without adding a
   router dependency.
-- Provide an `Open full incident` action from the expanded row.
-- On missing/stale detail, return to the queue with a clear membership-changed notice and never
+- [x] Provide an `Open full incident` action from the expanded row.
+- [x] On missing/stale detail, return to the queue with a clear membership-changed notice and never
   select an arbitrary successor.
-- Preserve all API-provided previous/current snapshot IDs when a later transition contract is
+- [x] Preserve all API-provided previous/current snapshot IDs when a later transition contract is
   available.
 
 ### 5. Verify
 
-- Run targeted backend contract tests, OpenAPI freeze, frontend tests, lint, typecheck, build,
+- [x] Run targeted backend contract tests, OpenAPI freeze, frontend tests, lint, typecheck, build,
   and the existing dashboard contract gates.
-- Browser-check expanded/collapsed rows, exactly-one-open behavior, detail navigation, missing
+- [x] Browser-check expanded/collapsed rows, exactly-one-open behavior, detail navigation, missing
   snapshot handling, keyboard focus, narrow layout, and console health.
-- Run `git diff --check` and preserve unrelated working-tree files.
+- [x] Run `git diff --check` and preserve unrelated working-tree files.

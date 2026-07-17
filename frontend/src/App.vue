@@ -1,12 +1,24 @@
 <script setup lang="ts">
 import type { LoadIncidentQueue } from "./features/incidents/application/load-incident-queue"
 import type { IncidentMapRenderer } from "./features/incidents/application/incident-map-port"
+import type { LoadIncidentDetail } from "./features/incidents/application/load-incident-detail"
 import IncidentQueuePage from "./features/incidents/ui/IncidentQueuePage.vue"
+import IncidentDetailPage from "./features/incidents/ui/IncidentDetailPage.vue"
+import { useAppRoute } from "./routing/app-route"
 
-defineProps<{
+const props = defineProps<{
   readonly loadIncidentQueue: Pick<LoadIncidentQueue, "execute">
+  readonly loadIncidentDetail: Pick<LoadIncidentDetail, "execute">
   readonly createIncidentMapRenderer?: () => IncidentMapRenderer
 }>()
+
+const { route, notice, openIncident, returnToQueue } = useAppRoute()
+
+function handleStaleIncident(): void {
+  returnToQueue(
+    "This incident snapshot changed while you were viewing it. Choose a current incident explicitly from the queue; no successor was selected automatically.",
+  )
+}
 </script>
 
 <template>
@@ -19,8 +31,19 @@ defineProps<{
   </header>
   <main class="app-shell__main">
     <IncidentQueuePage
-      :load-incident-queue="loadIncidentQueue"
-      :create-incident-map-renderer="createIncidentMapRenderer"
+      v-if="route.kind === 'queue'"
+      :load-incident-queue="props.loadIncidentQueue"
+      :load-incident-detail="props.loadIncidentDetail"
+      :create-incident-map-renderer="props.createIncidentMapRenderer"
+      :notice="notice"
+      @open-detail="openIncident"
+    />
+    <IncidentDetailPage
+      v-else
+      :snapshot-id="route.snapshotId"
+      :load-incident-detail="props.loadIncidentDetail"
+      @back="returnToQueue"
+      @stale="handleStaleIncident"
     />
   </main>
 </template>

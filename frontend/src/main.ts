@@ -9,5 +9,6 @@ const services = createAppServices()
 
 createApp(App as Component, {
   loadIncidentQueue: services.loadIncidentQueue,
+  loadIncidentDetail: services.loadIncidentDetail,
   createIncidentMapRenderer: services.createIncidentMapRenderer,
 }).mount("#app")

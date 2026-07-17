@@ -265,6 +265,10 @@ onMounted(() => {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .incident-queue__workspace > :deep(.incident-map-panel) {
+    order: -1;
+  }
+
   .incident-queue__queue-column {
     border-right: 0;
     border-bottom: 1px solid var(--divider);
