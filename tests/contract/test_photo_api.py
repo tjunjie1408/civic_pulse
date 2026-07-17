@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from civicpulse.api import create_app
 from civicpulse.photos import MAX_PHOTO_BYTES, PhotoStore, StoredPhoto
 from civicpulse.repository import SQLiteRepository
+from tests.contract.test_mutation_api import REQUEST, FakeMutationService
 
 JPEG_BYTES = b"\xff\xd8\xff\xe0" + b"\x00" * 64
 PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
@@ -23,6 +24,17 @@ def make_client(tmp_path: Path) -> TestClient:
     repository.initialize()
     store = PhotoStore(tmp_path / "uploads")
     return TestClient(create_app(repository=repository, photo_store=store))
+
+
+def make_submission_client(
+    tmp_path: Path,
+) -> tuple[TestClient, FakeMutationService, PhotoStore, SQLiteRepository]:
+    repository = SQLiteRepository(tmp_path / "photos.db")
+    repository.initialize()
+    store = PhotoStore(tmp_path / "uploads")
+    service = FakeMutationService()
+    client = TestClient(create_app(service=service, repository=repository, photo_store=store))
+    return client, service, store, repository
 
 
 def test_upload_and_fetch_roundtrip(tmp_path: Path) -> None:
@@ -141,3 +153,56 @@ def test_photo_routes_require_configured_store(tmp_path: Path) -> None:
     )
     assert upload.status_code == 503
     assert upload.json()["error"]["code"] == "readiness_failure"
+
+
+def test_complaint_with_photo_id_stores_server_owned_path(tmp_path: Path) -> None:
+    client, service, _store, _repository = make_submission_client(tmp_path)
+    upload = client.post(
+        "/api/v1/photos",
+        files={"file": ("evidence.jpg", JPEG_BYTES, "image/jpeg")},
+    )
+    photo_id = upload.json()["photo_id"]
+    response = client.post(
+        "/api/v1/complaints",
+        json={**REQUEST, "photo_id": photo_id},
+        headers={"Idempotency-Key": "photo-key-1"},
+    )
+    assert response.status_code == 201
+    submitted_payload, _key = service.submissions[0]
+    assert getattr(submitted_payload, "photo_path") == f"uploads/{photo_id}.jpg"
+
+
+def test_complaint_with_unknown_photo_id_is_rejected(tmp_path: Path) -> None:
+    client, service, _store, _repository = make_submission_client(tmp_path)
+    response = client.post(
+        "/api/v1/complaints",
+        json={**REQUEST, "photo_id": "30000000-0000-0000-0000-000000000009"},
+        headers={"Idempotency-Key": "photo-key-2"},
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "unknown_photo"
+    assert service.submissions == []
+
+
+def test_complaint_rejects_reserved_photo_path_prefix(tmp_path: Path) -> None:
+    client, _service, _store, _repository = make_submission_client(tmp_path)
+    response = client.post(
+        "/api/v1/complaints",
+        json={**REQUEST, "photo_path": "uploads/spoofed.jpg"},
+        headers={"Idempotency-Key": "photo-key-3"},
+    )
+    assert response.status_code == 422
+
+
+def test_complaint_rejects_photo_id_and_photo_path_together(tmp_path: Path) -> None:
+    client, _service, _store, _repository = make_submission_client(tmp_path)
+    response = client.post(
+        "/api/v1/complaints",
+        json={
+            **REQUEST,
+            "photo_id": "30000000-0000-0000-0000-000000000001",
+            "photo_path": "note.jpg",
+        },
+        headers={"Idempotency-Key": "photo-key-4"},
+    )
+    assert response.status_code == 422

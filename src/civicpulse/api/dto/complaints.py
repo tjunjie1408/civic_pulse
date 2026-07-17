@@ -5,10 +5,11 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from civicpulse.api.dto.common import ApiModel
 from civicpulse.domain import Category
+from civicpulse.photos import UPLOADS_PREFIX
 
 
 class ComplaintCreateRequest(ApiModel):
@@ -17,7 +18,15 @@ class ComplaintCreateRequest(ApiModel):
     longitude: float = Field(ge=-180, le=180, description="Longitude in decimal degrees.")
     reported_at: datetime = Field(description="Timezone-aware report time, normalized to UTC.")
     category: Category | None = None
-    photo_path: str | None = None
+    photo_id: UUID | None = Field(
+        default=None,
+        description="Identifier returned by the photo upload endpoint.",
+    )
+    photo_path: str | None = Field(
+        default=None,
+        max_length=255,
+        description="Legacy free-text photo reference; server-managed uploads use photo_id.",
+    )
 
     @field_validator("reported_at")
     @classmethod
@@ -25,6 +34,19 @@ class ComplaintCreateRequest(ApiModel):
         if value.tzinfo is None or value.utcoffset() is None:
             raise ValueError("reported_at must include a timezone")
         return value.astimezone(UTC)
+
+    @field_validator("photo_path")
+    @classmethod
+    def reject_reserved_prefix(cls, value: str | None) -> str | None:
+        if value is not None and value.startswith(UPLOADS_PREFIX):
+            raise ValueError("photo_path may not reference the server uploads namespace")
+        return value
+
+    @model_validator(mode="after")
+    def reject_conflicting_photo_fields(self) -> ComplaintCreateRequest:
+        if self.photo_id is not None and self.photo_path is not None:
+            raise ValueError("provide photo_id or photo_path, not both")
+        return self
 
 
 class ComplaintResponse(ApiModel):

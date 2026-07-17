@@ -38,9 +38,12 @@ def create_app(
 ) -> FastAPI:
     """Build an application around injected services without loading runtime dependencies."""
     resolved = settings or AppSettings()
+    resolved_repository = repository
+    if resolved_repository is None and service is not None:
+        resolved_repository = getattr(service, "repository", None)
     app = FastAPI(title=resolved.title, version=resolved.version)
     app.state.service = service
-    app.state.repository = repository
+    app.state.repository = resolved_repository
     app.state.health_service = health_service
     app.state.incident_query_service = incident_query_service
     app.state.photo_store = photo_store
