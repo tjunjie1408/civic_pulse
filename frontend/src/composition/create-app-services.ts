@@ -8,6 +8,8 @@ import { ReviewHttpAdapter } from "../features/reviews/adapters/http/review-http
 import { LoadReviewDetail } from "../features/reviews/application/load-review-detail"
 import { LoadReviewQueue } from "../features/reviews/application/load-review-queue"
 import { ResolveReview } from "../features/reviews/application/resolve-review"
+import { ComplaintHttpAdapter } from "../features/submissions/adapters/http/complaint-http-adapter"
+import { SubmitComplaint } from "../features/submissions/application/submit-complaint"
 
 export interface AppServices {
   readonly loadIncidentQueue: LoadIncidentQueue
@@ -15,6 +17,7 @@ export interface AppServices {
   readonly loadReviewQueue: LoadReviewQueue
   readonly loadReviewDetail: LoadReviewDetail
   readonly resolveReview: ResolveReview
+  readonly submitComplaint: SubmitComplaint
   readonly createIncidentMapRenderer: () => IncidentMapRenderer
 }
 
@@ -31,6 +34,10 @@ export function createAppServices(): AppServices {
     baseUrl: "/api/v1",
     fetch: window.fetch.bind(window),
   })
+  const complaints = new ComplaintHttpAdapter({
+    baseUrl: "/api/v1",
+    fetch: window.fetch.bind(window),
+  })
 
   return {
     loadIncidentQueue: new LoadIncidentQueue(incidentList),
@@ -38,6 +45,7 @@ export function createAppServices(): AppServices {
     loadReviewQueue: new LoadReviewQueue(reviews),
     loadReviewDetail: new LoadReviewDetail(reviews),
     resolveReview: new ResolveReview(reviews),
+    submitComplaint: new SubmitComplaint(complaints),
     createIncidentMapRenderer: () => createMapLibreIncidentMapRenderer({}),
   }
 }

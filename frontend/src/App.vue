@@ -5,9 +5,11 @@ import type { LoadIncidentDetail } from "./features/incidents/application/load-i
 import type { LoadReviewDetail } from "./features/reviews/application/load-review-detail"
 import type { LoadReviewQueue } from "./features/reviews/application/load-review-queue"
 import type { ResolveReview } from "./features/reviews/application/resolve-review"
+import type { SubmitComplaint } from "./features/submissions/application/submit-complaint"
 import IncidentQueuePage from "./features/incidents/ui/IncidentQueuePage.vue"
 import IncidentDetailPage from "./features/incidents/ui/IncidentDetailPage.vue"
 import ReviewQueuePage from "./features/reviews/ui/ReviewQueuePage.vue"
+import SubmitPage from "./features/submissions/ui/SubmitPage.vue"
 import { useAppRoute } from "./routing/app-route"
 
 const props = defineProps<{
@@ -16,10 +18,11 @@ const props = defineProps<{
   readonly loadReviewQueue: Pick<LoadReviewQueue, "execute">
   readonly loadReviewDetail: Pick<LoadReviewDetail, "execute">
   readonly resolveReview: Pick<ResolveReview, "execute">
+  readonly submitComplaint: Pick<SubmitComplaint, "execute">
   readonly createIncidentMapRenderer?: () => IncidentMapRenderer
 }>()
 
-const { route, notice, openIncident, openReviews, returnToQueue } = useAppRoute()
+const { route, notice, openIncident, openReviews, openSubmit, returnToQueue } = useAppRoute()
 
 function handleStaleIncident(): void {
   returnToQueue(
@@ -52,6 +55,13 @@ function handleStaleIncident(): void {
       >
         Pending reviews
       </button>
+      <button
+        type="button"
+        :aria-current="route.kind === 'submit' ? 'page' : undefined"
+        @click="openSubmit"
+      >
+        Submit report
+      </button>
     </nav>
     <h1>Incident operations</h1>
   </header>
@@ -70,6 +80,10 @@ function handleStaleIncident(): void {
       :load-review-detail="props.loadReviewDetail"
       :resolve-review="props.resolveReview"
       @back-to-queue="returnToQueue()"
+    />
+    <SubmitPage
+      v-else-if="route.kind === 'submit'"
+      :submit-complaint="props.submitComplaint"
     />
     <IncidentDetailPage
       v-else

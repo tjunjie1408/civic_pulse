@@ -8,6 +8,7 @@ import type {
   ReviewListResult,
   ReviewMutationResult,
 } from "./features/reviews/application/review-port"
+import type { ComplaintSubmissionResult } from "./features/submissions/application/complaint-port"
 import {
   incidentDetailFixture,
   incidentPageFixture,
@@ -84,10 +85,24 @@ class FakeResolveReview {
   }
 }
 
+class FakeSubmitComplaint {
+  execute(
+    request: unknown,
+    idempotencyKey: string,
+    signal: AbortSignal,
+  ): Promise<ComplaintSubmissionResult> {
+    void request
+    void idempotencyKey
+    void signal
+    return Promise.resolve({ ok: false, error: { kind: "service", status: 501 } })
+  }
+}
+
 const reviewProps = {
   loadReviewQueue: new FakeLoadReviewQueue(),
   loadReviewDetail: new FakeLoadReviewDetail(),
   resolveReview: new FakeResolveReview(),
+  submitComplaint: new FakeSubmitComplaint(),
 }
 
 afterEach(() => {
@@ -173,6 +188,22 @@ describe("App shell", () => {
     expect(window.location.pathname).toBe("/reviews")
     expect(wrapper.find(".review-queue").text()).toContain("Pending review queue")
     expect(wrapper.find(".incident-queue").exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it("navigates to the complaint submission view", async () => {
+    const wrapper = mount(App, {
+      props: {
+        loadIncidentQueue: new FakeLoadIncidentQueue(),
+        loadIncidentDetail: new FakeLoadIncidentDetail(),
+        ...reviewProps,
+      },
+    })
+
+    await wrapper.get(".app-shell__nav button:nth-child(3)").trigger("click")
+
+    expect(window.location.pathname).toBe("/submit")
+    expect(wrapper.get(".submit-page").text()).toContain("Submit a civic report")
     wrapper.unmount()
   })
 })

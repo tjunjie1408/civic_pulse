@@ -19,6 +19,7 @@
     "check": "pnpm run api:check && pnpm run lint && pnpm run test && pnpm run build"
   },
   "dependencies": {
+    "exifr": "^7.1.3",
     "maplibre-gl": "5.24.0",
     "vue": "^3.5.39"
   },
