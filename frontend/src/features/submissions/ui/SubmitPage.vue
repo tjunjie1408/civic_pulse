@@ -563,8 +563,8 @@ onBeforeUnmount(clearPhoto)
 }
 
 .submit-page__button:disabled {
-  cursor: wait;
-  opacity: 0.6;
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .submit-page__error {
