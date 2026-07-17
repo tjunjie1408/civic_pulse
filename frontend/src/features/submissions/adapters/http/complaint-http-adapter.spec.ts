@@ -39,14 +39,18 @@ describe("ComplaintHttpAdapter", () => {
       },
     })
 
-    const result: ComplaintSubmissionResult = await adapter.submit({
-      text: responseFixture.complaint.text,
-      latitude: responseFixture.complaint.latitude,
-      longitude: responseFixture.complaint.longitude,
-      reportedAt: responseFixture.complaint.reported_at,
-      category: responseFixture.complaint.category,
-      photoPath: responseFixture.complaint.photo_path,
-    }, "key-1", new AbortController().signal)
+    const result: ComplaintSubmissionResult = await adapter.submit(
+      {
+        text: responseFixture.complaint.text,
+        latitude: responseFixture.complaint.latitude,
+        longitude: responseFixture.complaint.longitude,
+        reportedAt: responseFixture.complaint.reported_at,
+        category: responseFixture.complaint.category,
+        photoId: "00000000-0000-4000-8000-000000000099",
+      },
+      "key-1",
+      new AbortController().signal,
+    )
 
     expect(capturedUrl).toBe("/api/v1/complaints")
     expect(capturedInit?.headers).toEqual({
@@ -55,7 +59,12 @@ describe("ComplaintHttpAdapter", () => {
     })
     const body = capturedInit?.body
     expect(typeof body).toBe("string")
-    if (typeof body === "string") expect(JSON.parse(body)).toMatchObject({ photo_path: "field-photo.jpg" })
+    if (typeof body === "string") {
+      expect(JSON.parse(body)).toMatchObject({
+        photo_id: "00000000-0000-4000-8000-000000000099",
+      })
+      expect(JSON.parse(body)).not.toHaveProperty("photo_path")
+    }
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.submission.complaint.photoPath).toBe("field-photo.jpg")
   })
@@ -65,14 +74,18 @@ describe("ComplaintHttpAdapter", () => {
       baseUrl: "/api/v1",
       fetch: () => Promise.resolve(new Response("{}", { status: 409 })),
     })
-    const result = await adapter.submit({
-      text: "A report",
-      latitude: 3,
-      longitude: 101,
-      reportedAt: "2026-07-17T00:00:00Z",
-      category: null,
-      photoPath: null,
-    }, "key-1", new AbortController().signal)
+    const result = await adapter.submit(
+      {
+        text: "A report",
+        latitude: 3,
+        longitude: 101,
+        reportedAt: "2026-07-17T00:00:00Z",
+        category: null,
+        photoId: null,
+      },
+      "key-1",
+      new AbortController().signal,
+    )
 
     expect(result).toEqual({ ok: false, error: { kind: "conflict", status: 409 } })
   })

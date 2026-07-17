@@ -1,13 +1,14 @@
 <script setup lang="ts">
+import type { LoadIncidentDetail } from "./features/incidents/application/load-incident-detail"
 import type { LoadIncidentQueue } from "./features/incidents/application/load-incident-queue"
 import type { IncidentMapRenderer } from "./features/incidents/application/incident-map-port"
-import type { LoadIncidentDetail } from "./features/incidents/application/load-incident-detail"
 import type { LoadReviewDetail } from "./features/reviews/application/load-review-detail"
 import type { LoadReviewQueue } from "./features/reviews/application/load-review-queue"
 import type { ResolveReview } from "./features/reviews/application/resolve-review"
 import type { SubmitComplaint } from "./features/submissions/application/submit-complaint"
-import IncidentQueuePage from "./features/incidents/ui/IncidentQueuePage.vue"
+import type { UploadPhoto } from "./features/submissions/application/upload-photo"
 import IncidentDetailPage from "./features/incidents/ui/IncidentDetailPage.vue"
+import IncidentQueuePage from "./features/incidents/ui/IncidentQueuePage.vue"
 import ReviewQueuePage from "./features/reviews/ui/ReviewQueuePage.vue"
 import SubmitPage from "./features/submissions/ui/SubmitPage.vue"
 import { useAppRoute } from "./routing/app-route"
@@ -19,6 +20,7 @@ const props = defineProps<{
   readonly loadReviewDetail: Pick<LoadReviewDetail, "execute">
   readonly resolveReview: Pick<ResolveReview, "execute">
   readonly submitComplaint: Pick<SubmitComplaint, "execute">
+  readonly uploadPhoto: Pick<UploadPhoto, "execute">
   readonly createIncidentMapRenderer?: () => IncidentMapRenderer
 }>()
 
@@ -84,6 +86,7 @@ function handleStaleIncident(): void {
     <SubmitPage
       v-else-if="route.kind === 'submit'"
       :submit-complaint="props.submitComplaint"
+      :upload-photo="props.uploadPhoto"
     />
     <IncidentDetailPage
       v-else

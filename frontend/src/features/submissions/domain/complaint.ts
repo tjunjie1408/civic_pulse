@@ -11,11 +11,17 @@ export interface ComplaintSubmissionRequest {
   readonly longitude: number
   readonly reportedAt: string
   readonly category: IncidentCategory | null
-  readonly photoPath: string | null
+  readonly photoId: string | null
 }
 
-export interface SubmittedComplaint extends ComplaintSubmissionRequest {
+export interface SubmittedComplaint {
   readonly complaintId: string
+  readonly text: string
+  readonly latitude: number
+  readonly longitude: number
+  readonly reportedAt: string
+  readonly category: IncidentCategory | null
+  readonly photoPath: string | null
 }
 
 export interface IncidentTransition {

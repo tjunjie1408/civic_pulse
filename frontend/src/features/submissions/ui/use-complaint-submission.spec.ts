@@ -2,7 +2,7 @@ import { effectScope } from "vue"
 import { describe, expect, it } from "vitest"
 
 import type { ComplaintSubmissionResult } from "../application/complaint-port"
-import type { ComplaintSubmissionRequest } from "../domain/complaint"
+import type { ComplaintSubmissionRequest, SubmittedComplaint } from "../domain/complaint"
 import { useComplaintSubmission } from "./use-complaint-submission"
 
 const request: ComplaintSubmissionRequest = {
@@ -11,14 +11,28 @@ const request: ComplaintSubmissionRequest = {
   longitude: 101.52,
   reportedAt: "2026-07-17T00:00:00Z",
   category: "blocked_drain",
-  photoPath: "field-photo.jpg",
+  photoId: "00000000-0000-4000-8000-000000000099",
+}
+
+const complaint: SubmittedComplaint = {
+  complaintId: "complaint-1",
+  text: request.text,
+  latitude: request.latitude,
+  longitude: request.longitude,
+  reportedAt: request.reportedAt,
+  category: request.category,
+  photoPath: "uploads/00000000-0000-4000-8000-000000000099.jpg",
 }
 
 class ControllableSubmitComplaint {
   readonly calls: Array<{ request: ComplaintSubmissionRequest; key: string }> = []
   readonly responses: Array<(result: ComplaintSubmissionResult) => void> = []
 
-  execute(candidate: ComplaintSubmissionRequest, key: string, signal: AbortSignal): Promise<ComplaintSubmissionResult> {
+  execute(
+    candidate: ComplaintSubmissionRequest,
+    key: string,
+    signal: AbortSignal,
+  ): Promise<ComplaintSubmissionResult> {
     void signal
     this.calls.push({ request: candidate, key })
     return new Promise((resolve) => this.responses.push(resolve))
@@ -47,7 +61,7 @@ describe("useComplaintSubmission", () => {
     useCase.responses[1]?.({
       ok: true,
       submission: {
-        complaint: { complaintId: "complaint-1", ...request },
+        complaint,
         created: true,
         replayed: false,
         relationshipDecisions: [],

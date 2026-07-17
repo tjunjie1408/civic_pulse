@@ -34,7 +34,7 @@ export class ComplaintHttpAdapter implements ComplaintPort {
           longitude: request.longitude,
           reported_at: request.reportedAt,
           category: request.category,
-          photo_path: request.photoPath,
+          photo_id: request.photoId,
         }),
       })
     } catch (error: unknown) {

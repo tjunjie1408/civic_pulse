@@ -2,13 +2,21 @@
 import { computed, onBeforeUnmount, ref } from "vue"
 
 import type { SubmitComplaint } from "../application/submit-complaint"
+import type { UploadPhoto } from "../application/upload-photo"
 import type { IncidentCategory } from "../../incidents/domain/incident"
 import { extractPhotoGps, validatePhoto } from "../domain/photo"
 import { useComplaintSubmission } from "./use-complaint-submission"
 
 const props = defineProps<{
   readonly submitComplaint: Pick<SubmitComplaint, "execute">
+  readonly uploadPhoto: Pick<UploadPhoto, "execute">
 }>()
+
+type PhotoUploadState =
+  | { readonly kind: "none" }
+  | { readonly kind: "uploading" }
+  | { readonly kind: "uploaded"; readonly photoId: string }
+  | { readonly kind: "failed"; readonly message: string }
 
 const categoryOptions: readonly { readonly value: IncidentCategory; readonly label: string }[] = [
   { value: "pothole", label: "Pothole / road surface" },
@@ -26,24 +34,56 @@ const longitude = ref("")
 const selectedFile = ref<File | null>(null)
 const photoPreviewUrl = ref<string | null>(null)
 const photoError = ref<string | null>(null)
+const photoUpload = ref<PhotoUploadState>({ kind: "none" })
 const formError = ref<string | null>(null)
 const gpsFromPhoto = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const submission = useComplaintSubmission(props.submitComplaint)
 const state = computed(() => submission.state.value)
+let uploadController: AbortController | null = null
+
+function uploadErrorMessage(kind: string): string {
+  switch (kind) {
+    case "network":
+      return "The photo could not be uploaded because the API is unreachable. Remove it or try again."
+    case "unsupported":
+      return "The API rejected this file; use a JPEG or PNG photo."
+    case "too_large":
+      return "The API rejected this photo; keep it under 8 MB."
+    default:
+      return "The photo could not be uploaded. Remove it or try again."
+  }
+}
+
+async function startUpload(file: File): Promise<void> {
+  uploadController?.abort()
+  const controller = new AbortController()
+  uploadController = controller
+  photoUpload.value = { kind: "uploading" }
+  const result = await props.uploadPhoto.execute(file, controller.signal)
+  if (controller.signal.aborted || selectedFile.value !== file) return
+  uploadController = null
+  photoUpload.value = result.ok
+    ? { kind: "uploaded", photoId: result.photoId }
+    : result.error.kind === "aborted"
+      ? { kind: "none" }
+      : { kind: "failed", message: uploadErrorMessage(result.error.kind) }
+}
+
+function retryUpload(): void {
+  if (selectedFile.value !== null) void startUpload(selectedFile.value)
+}
 
 function clearPhoto(): void {
+  uploadController?.abort()
+  uploadController = null
+  photoUpload.value = { kind: "none" }
   if (photoPreviewUrl.value !== null) URL.revokeObjectURL(photoPreviewUrl.value)
   selectedFile.value = null
   photoPreviewUrl.value = null
   photoError.value = null
   gpsFromPhoto.value = false
   if (fileInput.value !== null) fileInput.value.value = ""
-}
-
-function safeFileName(name: string): string {
-  const basename = name.split(/[\\/]/).pop() ?? "evidence"
-  return basename.trim() === "" ? "evidence" : basename
 }
 
 async function onPhotoChange(event: Event): Promise<void> {
@@ -59,6 +99,7 @@ async function onPhotoChange(event: Event): Promise<void> {
   }
   selectedFile.value = file
   photoPreviewUrl.value = URL.createObjectURL(file)
+  void startUpload(file)
   const gps = await extractPhotoGps(file)
   if (selectedFile.value !== file || gps === null) return
   latitude.value = gps.latitude.toFixed(5)
@@ -87,23 +128,36 @@ function validateForm(): boolean {
 
 function submit(): void {
   if (!validateForm()) return
+  if (photoUpload.value.kind === "uploading") {
+    formError.value = "Wait for the photo upload to finish, or remove the photo."
+    return
+  }
+  if (photoUpload.value.kind === "failed") {
+    formError.value = "Retry or remove the failed photo upload before submitting."
+    return
+  }
   void submission.submit({
     text: text.value.trim(),
     latitude: Number(latitude.value),
     longitude: Number(longitude.value),
     reportedAt: new Date().toISOString(),
     category: category.value === "" ? null : category.value,
-    photoPath: selectedFile.value === null ? null : safeFileName(selectedFile.value.name),
+    photoId: photoUpload.value.kind === "uploaded" ? photoUpload.value.photoId : null,
   })
 }
 
 function errorMessage(kind: string): string {
   switch (kind) {
-    case "network": return "The API could not be reached. Your draft is preserved; retry when it is available."
-    case "conflict": return "This submission was not accepted because its idempotency key conflicts with an earlier request."
-    case "contract": return "The API returned an unexpected submission response."
-    case "service": return "The API could not save this complaint. Your draft is preserved."
-    default: return "The complaint could not be submitted."
+    case "network":
+      return "The API could not be reached. Your draft is preserved; retry when it is available."
+    case "conflict":
+      return "This submission was not accepted because its idempotency key conflicts with an earlier request."
+    case "contract":
+      return "The API returned an unexpected submission response."
+    case "service":
+      return "The API could not save this complaint. Your draft is preserved."
+    default:
+      return "The complaint could not be submitted."
   }
 }
 
@@ -134,7 +188,7 @@ onBeforeUnmount(clearPhoto)
           Submit a civic report
         </h1>
         <p class="submit-page__description">
-          Add a text report, location, and optional photo evidence. The image preview stays in this browser session; the API records only its filename reference.
+          Add a text report, location, and optional photo evidence. Photos upload to the local CivicPulse server.
         </p>
       </div>
     </header>
@@ -198,7 +252,7 @@ onBeforeUnmount(clearPhoto)
           @change="onPhotoChange"
         >
         <p class="submit-page__help">
-          JPEG or PNG, up to 8 MB. The image is previewed locally and is not uploaded by the frozen API contract.
+          JPEG or PNG, up to 8 MB. The photo is stored with the report and appears in the incident detail.
         </p>
         <p
           v-if="photoError"
@@ -218,6 +272,33 @@ onBeforeUnmount(clearPhoto)
           >
           <div>
             <p>{{ selectedFile?.name }}</p>
+            <p
+              v-if="photoUpload.kind === 'uploading'"
+              class="submit-page__help"
+              role="status"
+            >
+              Uploading photo…
+            </p>
+            <p
+              v-else-if="photoUpload.kind === 'uploaded'"
+              class="submit-page__help"
+            >
+              Photo uploaded and ready to attach.
+            </p>
+            <p
+              v-else-if="photoUpload.kind === 'failed'"
+              class="submit-page__error"
+              role="alert"
+            >
+              {{ photoUpload.message }}
+            </p>
+            <button
+              v-if="photoUpload.kind === 'failed'"
+              type="button"
+              @click="retryUpload"
+            >
+              Retry upload
+            </button>
             <p
               v-if="gpsFromPhoto"
               class="submit-page__help"
@@ -252,9 +333,9 @@ onBeforeUnmount(clearPhoto)
       <div class="submit-page__actions submit-page__field--wide">
         <button
           type="submit"
-          :disabled="state.kind === 'submitting'"
+          :disabled="state.kind === 'submitting' || photoUpload.kind === 'uploading'"
         >
-          {{ state.kind === "submitting" ? "Submitting…" : "Submit report" }}
+          {{ state.kind === "submitting" ? "Submitting…" : photoUpload.kind === "uploading" ? "Waiting for photo upload…" : "Submit report" }}
         </button>
         <button
           v-if="state.kind === 'failed'"
@@ -282,7 +363,7 @@ onBeforeUnmount(clearPhoto)
           v-if="state.submission.complaint.photoPath"
           class="submit-page__help"
         >
-          Evidence reference recorded: {{ state.submission.complaint.photoPath }}. The preview above remains local to this browser.
+          Photo stored as {{ state.submission.complaint.photoPath }}. It will appear in the incident detail.
         </p>
       </div>
       <dl class="submit-page__result-facts">

@@ -1,5 +1,5 @@
-import { IncidentListHttpAdapter } from "../features/incidents/adapters/http/incident-list-http-adapter"
 import { IncidentDetailHttpAdapter } from "../features/incidents/adapters/http/incident-detail-http-adapter"
+import { IncidentListHttpAdapter } from "../features/incidents/adapters/http/incident-list-http-adapter"
 import { createMapLibreIncidentMapRenderer } from "../features/incidents/adapters/map/maplibre-map-adapter"
 import type { IncidentMapRenderer } from "../features/incidents/application/incident-map-port"
 import { LoadIncidentDetail } from "../features/incidents/application/load-incident-detail"
@@ -9,7 +9,9 @@ import { LoadReviewDetail } from "../features/reviews/application/load-review-de
 import { LoadReviewQueue } from "../features/reviews/application/load-review-queue"
 import { ResolveReview } from "../features/reviews/application/resolve-review"
 import { ComplaintHttpAdapter } from "../features/submissions/adapters/http/complaint-http-adapter"
+import { PhotoHttpAdapter } from "../features/submissions/adapters/http/photo-http-adapter"
 import { SubmitComplaint } from "../features/submissions/application/submit-complaint"
+import { UploadPhoto } from "../features/submissions/application/upload-photo"
 
 export interface AppServices {
   readonly loadIncidentQueue: LoadIncidentQueue
@@ -18,6 +20,7 @@ export interface AppServices {
   readonly loadReviewDetail: LoadReviewDetail
   readonly resolveReview: ResolveReview
   readonly submitComplaint: SubmitComplaint
+  readonly uploadPhoto: UploadPhoto
   readonly createIncidentMapRenderer: () => IncidentMapRenderer
 }
 
@@ -38,6 +41,10 @@ export function createAppServices(): AppServices {
     baseUrl: "/api/v1",
     fetch: window.fetch.bind(window),
   })
+  const photos = new PhotoHttpAdapter({
+    baseUrl: "/api/v1",
+    fetch: window.fetch.bind(window),
+  })
 
   return {
     loadIncidentQueue: new LoadIncidentQueue(incidentList),
@@ -46,6 +53,7 @@ export function createAppServices(): AppServices {
     loadReviewDetail: new LoadReviewDetail(reviews),
     resolveReview: new ResolveReview(reviews),
     submitComplaint: new SubmitComplaint(complaints),
+    uploadPhoto: new UploadPhoto(photos),
     createIncidentMapRenderer: () => createMapLibreIncidentMapRenderer({}),
   }
 }

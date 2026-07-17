@@ -1,22 +1,23 @@
 import { flushPromises, mount } from "@vue/test-utils"
 import { afterEach, describe, expect, it } from "vitest"
 
-import type { IncidentDetailResult } from "./features/incidents/application/incident-detail-port"
-import type { IncidentListResult } from "./features/incidents/application/incident-list-port"
-import type {
-  ReviewDetailResult,
-  ReviewListResult,
-  ReviewMutationResult,
-} from "./features/reviews/application/review-port"
+import type { PhotoUploadResult } from "./features/submissions/application/photo-upload-port"
 import type { ComplaintSubmissionResult } from "./features/submissions/application/complaint-port"
 import {
   incidentDetailFixture,
   incidentPageFixture,
 } from "./features/incidents/testing/incident-fixtures"
+import type { IncidentDetailResult } from "./features/incidents/application/incident-detail-port"
+import type { IncidentListResult } from "./features/incidents/application/incident-list-port"
 import {
   reviewDetailFixture,
   reviewSummaryFixture,
 } from "./features/reviews/testing/review-fixtures"
+import type {
+  ReviewDetailResult,
+  ReviewListResult,
+  ReviewMutationResult,
+} from "./features/reviews/application/review-port"
 import App from "./App.vue"
 
 class FakeLoadIncidentQueue {
@@ -85,6 +86,14 @@ class FakeResolveReview {
   }
 }
 
+class FakeUploadPhoto {
+  execute(file: File, signal: AbortSignal): Promise<PhotoUploadResult> {
+    void file
+    void signal
+    return Promise.resolve({ ok: false, error: { kind: "service", status: 501 } })
+  }
+}
+
 class FakeSubmitComplaint {
   execute(
     request: unknown,
@@ -103,6 +112,7 @@ const reviewProps = {
   loadReviewDetail: new FakeLoadReviewDetail(),
   resolveReview: new FakeResolveReview(),
   submitComplaint: new FakeSubmitComplaint(),
+  uploadPhoto: new FakeUploadPhoto(),
 }
 
 afterEach(() => {
