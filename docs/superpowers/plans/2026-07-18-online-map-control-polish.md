@@ -493,9 +493,9 @@ Replace the raw file-input and generic button rules with:
 }
 
 .submit-page__button--danger {
-  border-color: color-mix(in srgb, var(--critical) 55%, var(--divider));
+  border-color: color-mix(in srgb, var(--oxblood) 55%, var(--divider));
   background: var(--paper-white);
-  color: var(--critical);
+  color: var(--oxblood);
 }
 
 .submit-page__button:hover:not(:disabled),
@@ -523,7 +523,7 @@ Replace the raw file-input and generic button rules with:
 }
 ```
 
-Use the repository's actual critical-color token name from `styles/tokens.css`; if it is not `--critical`, add no token and use the existing critical hex value already used by the app.
+Use the repository's existing `--oxblood` token for the quiet-danger control. Do not add a new danger token.
 
 - [ ] **Step 5: Run focused and full frontend verification**
 
