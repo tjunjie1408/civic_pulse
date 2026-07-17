@@ -134,8 +134,27 @@ watch(detail.state, (state) => {
             <p>{{ report.text }}</p>
             <small>
               {{ report.category }} · {{ report.latitude.toFixed(4) }}, {{ report.longitude.toFixed(4) }}
-              · {{ report.photoAvailable ? "Photo available" : "No photo available" }}
             </small>
+            <a
+              v-if="report.photoUrl !== null"
+              class="incident-detail__photo-link"
+              :href="report.photoUrl"
+              target="_blank"
+              rel="noopener"
+              data-report-photo-link
+            >
+              <img
+                class="incident-detail__photo"
+                :src="report.photoUrl"
+                loading="lazy"
+                :alt="`Photo evidence for report ${report.complaintId.slice(0, 8)}`"
+                data-report-photo
+              >
+            </a>
+            <small v-else-if="report.photoAvailable">
+              Photo reference recorded before server storage; image unavailable.
+            </small>
+            <small v-else>No photo evidence.</small>
           </li>
         </ul>
         <p v-if="readyDetail.confirmedReports.hasMore">
@@ -145,3 +164,18 @@ watch(detail.state, (state) => {
     </article>
   </section>
 </template>
+
+<style scoped>
+.incident-detail__photo-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+.incident-detail__photo {
+  display: block;
+  max-width: 14rem;
+  max-height: 10rem;
+  object-fit: cover;
+  border: 1px solid var(--divider);
+}
+</style>
