@@ -193,6 +193,74 @@ def test_incident_order_is_repeatable() -> None:
     ]
 
 
+def test_list_incidents_orders_by_priority_then_recency_then_snapshot_id() -> None:
+    critical_priority = complaint(41, category=Category.POTHOLE, hours_ago=49)
+    high_priority = complaint(42, category=Category.POTHOLE, hours_ago=25)
+    medium_latest = complaint(43, category=Category.POTHOLE, hours_ago=6)
+    newer_low = complaint(44, category=Category.POTHOLE, hours_ago=1)
+    older_low = complaint(45, category=Category.POTHOLE, hours_ago=2)
+    tie_first = complaint(46, category=Category.POTHOLE, hours_ago=3)
+    tie_second = complaint(47, category=Category.POTHOLE, hours_ago=3)
+    medium_earlier = complaint(48, category=Category.POTHOLE, hours_ago=7)
+    conflict = complaint(49, category=Category.POTHOLE, hours_ago=0)
+    medium_priority = incident(43, medium_latest).model_copy(
+        update={
+            "complaint_ids": (medium_earlier.id, medium_latest.id),
+            "report_count": 2,
+            "earliest_reported_at": medium_earlier.reported_at,
+        }
+    )
+    response = client_for(
+        complaints=[
+            critical_priority,
+            high_priority,
+            medium_latest,
+            newer_low,
+            older_low,
+            tie_first,
+            tie_second,
+            medium_earlier,
+            conflict,
+        ],
+        incidents=[
+            incident(49, conflict, status=ClusteringStatus.CONFLICT),
+            incident(45, older_low),
+            incident(47, tie_second),
+            medium_priority,
+            incident(42, high_priority),
+            incident(44, newer_low),
+            incident(41, critical_priority),
+            incident(46, tie_first),
+        ],
+    ).get("/api/v1/incidents")
+
+    assert response.status_code == 200
+    items = response.json()["items"]
+    priority_levels = [
+        item["priority"]["level"] if item["priority"] is not None else None for item in items
+    ]
+    assert priority_levels == [
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "low",
+        "low",
+        "low",
+        None,
+    ]
+    assert [item["incident_id"] for item in items] == [
+        "10000000-0000-0000-0000-000000000041",
+        "10000000-0000-0000-0000-000000000042",
+        "10000000-0000-0000-0000-000000000043",
+        "10000000-0000-0000-0000-000000000044",
+        "10000000-0000-0000-0000-000000000045",
+        "10000000-0000-0000-0000-000000000046",
+        "10000000-0000-0000-0000-000000000047",
+        "10000000-0000-0000-0000-000000000049",
+    ]
+
+
 def test_conflict_detail_has_null_priority_and_exposes_snapshot_evidence() -> None:
     item = complaint(3, category=Category.POTHOLE)
     conflict = incident(3, item, status=ClusteringStatus.CONFLICT)

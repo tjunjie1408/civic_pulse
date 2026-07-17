@@ -1,0 +1,40 @@
+{
+  "name": "civicpulse-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "api:generate": "openapi-typescript ../tests/contracts/openapi-v1.json -o src/features/incidents/adapters/http/generated/openapi.d.ts --immutable --alphabetize",
+    "api:check": "openapi-typescript ../tests/contracts/openapi-v1.json -o src/features/incidents/adapters/http/generated/openapi.d.ts --immutable --alphabetize --check",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "vue-tsc -b",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "vue-tsc -b && vite build",
+    "check": "pnpm run api:check && pnpm run lint && pnpm run test && pnpm run build"
+  },
+  "dependencies": {
+    "maplibre-gl": "5.24.0",
+    "vue": "^3.5.39"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/test-utils": "^2.4.11",
+    "eslint": "^10.7.0",
+    "eslint-plugin-vue": "^10.9.2",
+    "globals": "^17.7.0",
+    "jsdom": "^29.1.1",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.64.0",
+    "vite": "^8.1.4",
+    "vitest": "^4.1.10",
+    "vue-tsc": "^3.3.7"
+  }
+}

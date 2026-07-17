@@ -119,6 +119,23 @@ Mutation responses expose previous and new snapshot IDs so clients can refresh w
 
 The repository contains both an injection-only FastAPI boundary for contract tests and a production composition entrypoint for the local demo. The server owns the repository, policies, seed, sensitive-location fixture, and embedding provider; the Dashboard remains an HTTP client.
 
+### Vue frontend setup
+
+The Slice 1 operations shell is a separate Vite application in `frontend/`. It requires Node `>=22.12.0` and pnpm `11.9.0` (the versions are also pinned by `frontend/package.json`). From the repository root, install the locked frontend dependencies with:
+
+```powershell
+pnpm --dir frontend install --frozen-lockfile
+```
+
+Start the API in one terminal, then start the Vite development server in another:
+
+```powershell
+uv run --offline uvicorn civicpulse.runtime:create_runtime_app --factory --host 127.0.0.1 --port 8000
+pnpm --dir frontend run dev -- --host 127.0.0.1
+```
+
+Vite proxies `/api` to the API at `http://127.0.0.1:8000`; the frontend therefore remains an HTTP client and does not recreate server-owned ordering, matching, clustering, or priority logic.
+
 ### 1. Install dependencies
 
 PowerShell:
@@ -216,6 +233,33 @@ uv run --offline ruff check src/civicpulse_dashboard
 uv run --offline python -m scripts.run_hybrid_benchmark
 git diff --check
 ```
+
+For the Vue frontend release gates, run the commands below after the frozen dependency install. Each gate is intentionally listed so failures remain attributable; `check` runs the combined API contract, lint, behavior-test, and production-build gates.
+
+```powershell
+pnpm --dir frontend install --frozen-lockfile
+pnpm --dir frontend run api:check
+pnpm --dir frontend run lint
+pnpm --dir frontend run typecheck
+pnpm --dir frontend run test
+pnpm --dir frontend run build
+pnpm --dir frontend run check
+```
+
+The frontend scope audit also checks for prohibited dependencies, queue sorting, and placeholder copy:
+
+```powershell
+rg -n "pinia|@tanstack|maplibre|vue-router|axios|zod|\.sort\(" frontend/src frontend/package.json
+rg -n "TODO|TBD|placeholder|lorem|coming soon" frontend/src
+```
+
+The affected backend contract gates are:
+
+```powershell
+uv run --offline python -m pytest tests/contract/test_incident_read_api.py tests/contract/test_openapi_freeze.py tests/contract/test_dashboard_gateway.py tests/contract/test_dashboard_recovery.py -q
+```
+
+The isolated Windows worktree has one approved, environment-only baseline deviation: `tests/unit/test_benchmark_schema.py::test_benchmark_manifest_matches_fixture_bytes` fails because `core.autocrlf=true` checks out the frozen fixture as CRLF. The manifest hash (`4b0136286710195e696216d209002eb9749b5f55e5fd32f45e09e73f438c8028`) and actual worktree hash (`bec7464dadd3c606efe87adc82b9fee2b8aa4399d6c7fddf33ef7e887ad65a60`) are recorded in `.superpowers/sdd/baseline.md`; do not alter the fixture, manifest, or Git configuration to hide it. Release reports must preserve the differential statement: `Known baseline failure: 1` and `New failures introduced by Slice 1: 0`.
 
 The verified Phase 9 evidence is:
 

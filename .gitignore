@@ -11,3 +11,6 @@ data/civicpulse.db
 data/uploads/
 benchmarks/reports/*.json
 !benchmarks/reports/performance-budget.json
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
