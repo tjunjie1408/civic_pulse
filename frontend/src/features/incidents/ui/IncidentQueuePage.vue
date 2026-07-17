@@ -251,6 +251,7 @@ onMounted(() => {
 
 .incident-queue__workspace {
   display: grid;
+  align-items: start;
   grid-template-columns: minmax(0, 1.2fr) minmax(22rem, 0.8fr);
   min-width: 0;
 }
