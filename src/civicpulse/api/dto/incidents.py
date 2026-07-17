@@ -42,6 +42,7 @@ class ComplaintSummaryResponse(ApiModel):
     longitude: float
     reported_at: datetime
     photo_available: bool
+    photo_url: str | None
 
 
 class IncidentEvidencePreviewResponse(ApiModel):

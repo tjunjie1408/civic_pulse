@@ -308,8 +308,38 @@ def test_incident_detail_returns_bounded_confirmed_report_summaries() -> None:
         "longitude": complaints[0].longitude,
         "reported_at": complaints[0].reported_at.isoformat().replace("+00:00", "Z"),
         "photo_available": False,
+        "photo_url": None,
     }
     assert "photo_path" not in response.text
+
+
+def test_incident_detail_maps_photo_url_from_server_paths() -> None:
+    server_photo_path = "uploads/30000000-0000-4000-8000-000000000001.jpg"
+    server = complaint(10, category=Category.POTHOLE).model_copy(
+        update={"photo_path": server_photo_path, "reported_at": NOW - timedelta(hours=2)}
+    )
+    legacy = complaint(11, category=Category.POTHOLE).model_copy(
+        update={"photo_path": "site-note.jpg", "reported_at": NOW - timedelta(hours=1)}
+    )
+    source = incident(10, server).model_copy(
+        update={
+            "complaint_ids": (server.id, legacy.id),
+            "report_count": 2,
+            "earliest_reported_at": server.reported_at,
+            "latest_reported_at": legacy.reported_at,
+        }
+    )
+    response = client_for(complaints=[server, legacy], incidents=[source]).get(
+        f"/api/v1/incidents/{source.incident_id}"
+    )
+
+    assert response.status_code == 200
+    items = response.json()["confirmed_reports"]["items"]
+    by_url = {item["photo_url"]: item for item in items}
+    assert by_url["/api/v1/photos/30000000-0000-4000-8000-000000000001"]["photo_available"] is True
+    legacy_item = by_url[None]
+    assert legacy_item["photo_available"] is True
+    assert legacy_item["photo_url"] is None
 
 
 def test_missing_snapshot_uses_stable_not_found_error_envelope() -> None:

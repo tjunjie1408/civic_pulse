@@ -21,6 +21,7 @@ from civicpulse.api.dto.incidents import (
 from civicpulse.api.errors import ApiError
 from civicpulse.domain import Category, ClusteringStatus, PriorityLevel, RelationshipEdge
 from civicpulse.incident_query import IncidentListQuery, IncidentQueryService, IncidentRead
+from civicpulse.photos import photo_url_for
 
 EVIDENCE_PREVIEW_LIMIT = 3
 
@@ -156,6 +157,7 @@ def get_incident(
                     longitude=complaint.longitude,
                     reported_at=complaint.reported_at,
                     photo_available=complaint.photo_path is not None,
+                    photo_url=photo_url_for(complaint.photo_path),
                 )
                 for complaint in evidence.items
             ],
