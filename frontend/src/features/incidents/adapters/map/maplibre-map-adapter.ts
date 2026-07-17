@@ -11,7 +11,7 @@ import type {
 } from "../../application/incident-map-port"
 import type { HeatCell } from "../../domain/heatmap"
 import { projectAffectedAreas } from "../../domain/radius-overlay"
-import { FALLBACK_MAP_STYLE } from "./fallback-style"
+export const OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 
 type MapListener = (...args: unknown[]) => void
 
@@ -35,7 +35,7 @@ export interface MapFactoryOptions {
   readonly style: unknown
   readonly center: readonly [number, number]
   readonly zoom: number
-  readonly attributionControl: false
+  readonly attributionControl: true
 }
 
 export type MapFactory = (options: MapFactoryOptions) => MapLike
@@ -57,14 +57,23 @@ const RADIUS_LINE_LAYER_ID = "civicpulse-incident-radius-line"
 const CENTROID_LAYER_ID = "civicpulse-incident-centroids"
 const SELECTED_LAYER_ID = "civicpulse-incident-selected"
 
-const CATEGORY_COLORS = {
-  flooding: "#1677a8",
-  blocked_drain: "#267f86",
-  pothole: "#a4772d",
-  rubbish: "#883f4a",
-  street_light: "#5b5b88",
-  other: "#64748b",
-} as const
+const DENSITY_COLOR_EXPRESSION = [
+  "interpolate",
+  ["linear"],
+  ["heatmap-density"],
+  0,
+  "rgba(0, 0, 0, 0)",
+  0.15,
+  "#2F80ED",
+  0.38,
+  "#22B8A7",
+  0.6,
+  "#F2C94C",
+  0.8,
+  "#F2994A",
+  1,
+  "#D64545",
+] as const
 
 const NEUTRAL_COLOR = "#64748b"
 
@@ -121,14 +130,7 @@ function centroidFeatureCollection(view: IncidentMapView) {
   }
 }
 
-function withAlpha(hexColor: string, alpha: number): string {
-  const red = Number.parseInt(hexColor.slice(1, 3), 16)
-  const green = Number.parseInt(hexColor.slice(3, 5), 16)
-  const blue = Number.parseInt(hexColor.slice(5, 7), 16)
-  return `rgba(${red}, ${green}, ${blue}, ${alpha})`
-}
-
-function heatLayer(id: string, color: string, filter?: readonly unknown[]) {
+function heatLayer(id: string, filter?: readonly unknown[]) {
   return {
     id,
     type: "heatmap" as const,
@@ -138,20 +140,8 @@ function heatLayer(id: string, color: string, filter?: readonly unknown[]) {
       "heatmap-weight": ["get", "intensity"],
       "heatmap-intensity": 1,
       "heatmap-radius": 24,
-      "heatmap-opacity": 0.82,
-      "heatmap-color": [
-        "interpolate",
-        ["linear"],
-        ["heatmap-density"],
-        0,
-        "rgba(0, 0, 0, 0)",
-        0.01,
-        withAlpha(color, 0.25),
-        0.35,
-        withAlpha(color, 0.65),
-        1,
-        color,
-      ],
+      "heatmap-opacity": 0.68,
+      "heatmap-color": DENSITY_COLOR_EXPRESSION,
     },
   }
 }
@@ -241,12 +231,13 @@ export function createMapLibreIncidentMapRenderer(
       return
     }
     const createMap = options.createMap ?? defaultMapFactory
+    const mapStyle = options.style ?? OPENFREEMAP_STYLE_URL
     map = createMap({
       container,
-      style: options.style ?? FALLBACK_MAP_STYLE,
+      style: mapStyle,
       center: options.center ?? [101.52, 3.08],
       zoom: options.zoom ?? 11,
-      attributionControl: false,
+      attributionControl: true,
     })
     map.on("load", onLoad)
     map.on("style.load", onStyleLoad)
@@ -288,11 +279,11 @@ export function createMapLibreIncidentMapRenderer(
     map.addSource(CENTROID_SOURCE_ID, { type: "geojson", data: centroidFeatureCollection(view) })
     renderedSourceIds.add(CENTROID_SOURCE_ID)
     if (view.mode.kind === "all") {
-      map.addLayer(heatLayer(NEUTRAL_LAYER_ID, NEUTRAL_COLOR))
+      map.addLayer(heatLayer(NEUTRAL_LAYER_ID))
       renderedLayerIds.add(NEUTRAL_LAYER_ID)
     } else {
       map.addLayer(
-        heatLayer(CATEGORY_LAYER_ID, CATEGORY_COLORS[view.mode.category], [
+        heatLayer(CATEGORY_LAYER_ID, [
           "==",
           ["get", "dominantCategory"],
           view.mode.category,
@@ -336,9 +327,11 @@ export function createMapLibreIncidentMapRenderer(
       source: CENTROID_SOURCE_ID,
       filter: ["==", ["get", "selected"], true],
       paint: {
-        "circle-color": "#171a1c",
-        "circle-radius": 9,
-        "circle-opacity": 0.95,
+        "circle-color": "#ffffff",
+        "circle-radius": 10,
+        "circle-opacity": 0.98,
+        "circle-stroke-color": "#171a1c",
+        "circle-stroke-width": 3,
       },
     })
     renderedLayerIds.add(SELECTED_LAYER_ID)
@@ -384,7 +377,8 @@ export function createMapLibreIncidentMapRenderer(
     }
     styleReady = false
     emitLifecycle("recovering")
-    map.setStyle(options.style ?? FALLBACK_MAP_STYLE)
+    const mapStyle = options.style ?? OPENFREEMAP_STYLE_URL
+    map.setStyle(mapStyle)
   }
 
   function dispose(): void {
