@@ -138,7 +138,19 @@ describe("createMapLibreIncidentMapRenderer", () => {
       id: "civicpulse-incident-category-heat",
       type: "heatmap",
       filter: ["==", ["get", "dominantCategory"], "flooding"],
-      paint: { "heatmap-color": "#1677a8" },
+      paint: {
+        "heatmap-color": [
+          "interpolate",
+          ["linear"],
+          ["heatmap-density"],
+          0,
+          "rgba(0, 0, 0, 0)",
+          0.2,
+          "#1677a8",
+          1,
+          "#1677a8",
+        ],
+      },
     })
   })
 
@@ -154,7 +166,19 @@ describe("createMapLibreIncidentMapRenderer", () => {
     expect(fake.calls.at(-1)?.args[0]).toMatchObject({
       id: "civicpulse-incident-neutral-heat",
       type: "heatmap",
-      paint: { "heatmap-color": "#64748b" },
+      paint: {
+        "heatmap-color": [
+          "interpolate",
+          ["linear"],
+          ["heatmap-density"],
+          0,
+          "rgba(0, 0, 0, 0)",
+          0.2,
+          "#64748b",
+          1,
+          "#64748b",
+        ],
+      },
     })
   })
 

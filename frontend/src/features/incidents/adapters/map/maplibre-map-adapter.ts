@@ -74,7 +74,18 @@ function heatLayer(id: string, color: string, filter?: readonly unknown[]) {
       "heatmap-intensity": 1,
       "heatmap-radius": 24,
       "heatmap-opacity": 0.82,
-      "heatmap-color": color,
+      // Keep zero-density pixels transparent so the neutral style remains visible between points.
+      "heatmap-color": [
+        "interpolate",
+        ["linear"],
+        ["heatmap-density"],
+        0,
+        "rgba(0, 0, 0, 0)",
+        0.2,
+        color,
+        1,
+        color,
+      ],
     },
   }
 }
