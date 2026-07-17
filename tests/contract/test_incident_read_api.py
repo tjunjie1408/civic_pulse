@@ -278,6 +278,40 @@ def test_conflict_detail_has_null_priority_and_exposes_snapshot_evidence() -> No
     assert payload["review_candidates"] == []
 
 
+def test_incident_detail_returns_bounded_confirmed_report_summaries() -> None:
+    complaints = [complaint(number, category=Category.POTHOLE) for number in range(1, 6)]
+    source = incident(1, complaints[0]).model_copy(
+        update={
+            "complaint_ids": tuple(item.id for item in complaints),
+            "report_count": len(complaints),
+            "earliest_reported_at": complaints[0].reported_at,
+            "latest_reported_at": complaints[-1].reported_at,
+        }
+    )
+    client = client_for(complaints=complaints, incidents=[source])
+
+    response = client.get(f"/api/v1/incidents/{source.incident_id}")
+
+    assert response.status_code == 200
+    preview = response.json()["confirmed_reports"]
+    assert preview["total"] == 5
+    assert preview["has_more"] is True
+    assert len(preview["items"]) == 3
+    assert [item["complaint_id"] for item in preview["items"]] == [
+        str(item.id) for item in complaints[:3]
+    ]
+    assert preview["items"][0] == {
+        "complaint_id": str(complaints[0].id),
+        "text": complaints[0].text,
+        "category": "pothole",
+        "latitude": complaints[0].latitude,
+        "longitude": complaints[0].longitude,
+        "reported_at": complaints[0].reported_at.isoformat().replace("+00:00", "Z"),
+        "photo_available": False,
+    }
+    assert "photo_path" not in response.text
+
+
 def test_missing_snapshot_uses_stable_not_found_error_envelope() -> None:
     missing_id = "10000000-0000-0000-0000-999999999999"
     response = client_for(complaints=[], incidents=[]).get(f"/api/v1/incidents/{missing_id}")

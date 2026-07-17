@@ -45,6 +45,13 @@ class IncidentPage:
     total: int
 
 
+@dataclass(frozen=True)
+class IncidentEvidencePage:
+    items: tuple[Complaint, ...]
+    total: int
+    has_more: bool
+
+
 class IncidentQueryService:
     """Build stable read models from persisted incident snapshots and evidence."""
 
@@ -124,3 +131,27 @@ class IncidentQueryService:
         if incident is None:
             return None
         return self._read(incident, self.repository.list_complaints())
+
+    def get_incident_evidence(
+        self,
+        incident_id: UUID,
+        *,
+        limit: int = 3,
+    ) -> IncidentEvidencePage | None:
+        """Return a bounded, membership-scoped preview for one snapshot."""
+        if limit < 1:
+            raise ValueError("limit must be positive")
+        incident = self.repository.get_incident(incident_id)
+        if incident is None:
+            return None
+        complaints_by_id = {complaint.id: complaint for complaint in self.repository.list_complaints()}
+        ordered = tuple(
+            complaints_by_id[complaint_id]
+            for complaint_id in incident.complaint_ids
+            if complaint_id in complaints_by_id
+        )
+        return IncidentEvidencePage(
+            items=ordered[:limit],
+            total=len(ordered),
+            has_more=len(ordered) > limit,
+        )

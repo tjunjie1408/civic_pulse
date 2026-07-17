@@ -18,6 +18,7 @@ const detailTransport = {
   review_candidate_ids: [],
   confirmed_edges: [],
   review_candidates: [],
+  confirmed_reports: { items: [], total: 0, has_more: false },
 } as const
 
 function responseWithJson(value: unknown, status = 200): Response {

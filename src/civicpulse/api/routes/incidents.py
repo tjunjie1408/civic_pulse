@@ -10,6 +10,8 @@ from civicpulse.api.dependencies import get_incident_query_service
 from civicpulse.api.dto.common import GeoPointResponse
 from civicpulse.api.dto.incidents import (
     IncidentDetailResponse,
+    ComplaintSummaryResponse,
+    IncidentEvidencePreviewResponse,
     IncidentListResponse,
     IncidentSummaryResponse,
     PriorityResponse,
@@ -19,6 +21,8 @@ from civicpulse.api.dto.incidents import (
 from civicpulse.api.errors import ApiError
 from civicpulse.domain import Category, ClusteringStatus, PriorityLevel, RelationshipEdge
 from civicpulse.incident_query import IncidentListQuery, IncidentQueryService, IncidentRead
+
+EVIDENCE_PREVIEW_LIMIT = 3
 
 router = APIRouter(prefix="/incidents", tags=["incidents"])
 
@@ -122,6 +126,17 @@ def get_incident(
             details={"incident_id": str(incident_id)},
         )
     incident = read.incident
+    evidence = query_service.get_incident_evidence(
+        incident_id,
+        limit=EVIDENCE_PREVIEW_LIMIT,
+    )
+    if evidence is None:
+        raise ApiError(
+            code="incident_not_found",
+            message="The requested incident snapshot was not found.",
+            status_code=404,
+            details={"incident_id": str(incident_id)},
+        )
     return IncidentDetailResponse(
         **to_incident_summary(read).model_dump(),
         complaint_ids=list(incident.complaint_ids),
@@ -131,4 +146,20 @@ def get_incident(
             ReviewCandidateResponse(**to_edge_response(edge).model_dump())
             for edge in incident.review_candidates
         ],
+        confirmed_reports=IncidentEvidencePreviewResponse(
+            items=[
+                ComplaintSummaryResponse(
+                    complaint_id=complaint.id,
+                    text=complaint.text,
+                    category=complaint.category or Category.OTHER,
+                    latitude=complaint.latitude,
+                    longitude=complaint.longitude,
+                    reported_at=complaint.reported_at,
+                    photo_available=complaint.photo_path is not None,
+                )
+                for complaint in evidence.items
+            ],
+            total=evidence.total,
+            has_more=evidence.has_more,
+        ),
     )

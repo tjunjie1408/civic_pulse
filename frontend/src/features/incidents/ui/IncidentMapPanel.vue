@@ -1,13 +1,23 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 
-import type { IncidentMapRenderer } from "../application/incident-map-port"
+import type {
+  IncidentMapRenderer,
+  MapLifecycleState,
+} from "../application/incident-map-port"
 import { buildHeatCells, type HeatmapMode } from "../domain/heatmap"
 import type { IncidentCategory, IncidentSummary } from "../domain/incident"
 
 const props = defineProps<{
   readonly incidents: readonly IncidentSummary[]
   readonly createRenderer: () => IncidentMapRenderer
+  readonly selectedIncidentId?: string | null
+  readonly hoveredIncidentId?: string | null
+}>()
+
+const emit = defineEmits<{
+  (event: "select", incidentId: string): void
+  (event: "preview", incidentId: string | null): void
 }>()
 
 const renderer = props.createRenderer()
@@ -34,6 +44,11 @@ const selectedValue = ref<"all" | IncidentCategory>("all")
 const mapContainer = ref<HTMLElement | null>(null)
 const rendererMounted = ref(false)
 const renderStrategy = ref<"category-heat" | "neutral-density">("neutral-density")
+const mapLifecycle = ref<MapLifecycleState>("loading")
+
+let unsubscribeSelect: (() => void) | undefined
+let unsubscribePreview: (() => void) | undefined
+let unsubscribeLifecycle: (() => void) | undefined
 
 const selectedMode = computed<HeatmapMode>(() =>
   selectedValue.value === "all"
@@ -45,19 +60,32 @@ const isEmpty = computed(() => cells.value.length === 0)
 const showNeutralFallback = computed(
   () => selectedMode.value.kind === "all" && renderStrategy.value === "neutral-density",
 )
+const isMapDegraded = computed(() => mapLifecycle.value === "degraded")
+const isMapRecovering = computed(() => mapLifecycle.value === "recovering")
 const handleResize = (): void => renderer.resize()
 
 function renderMap(): void {
   if (!rendererMounted.value) {
     return
   }
-  renderStrategy.value = renderer.render(cells.value, selectedMode.value)
+  renderStrategy.value = renderer.render({
+    incidents: props.incidents,
+    cells: cells.value,
+    mode: selectedMode.value,
+    selectedIncidentId: props.selectedIncidentId ?? null,
+    hoveredIncidentId: props.hoveredIncidentId ?? null,
+  })
 }
 
 onMounted(() => {
   if (mapContainer.value === null) {
     return
   }
+  unsubscribeSelect = renderer.onIncidentSelect((incidentId) => emit("select", incidentId))
+  unsubscribePreview = renderer.onIncidentPreview((incidentId) => emit("preview", incidentId))
+  unsubscribeLifecycle = renderer.onLifecycleChange((state) => {
+    mapLifecycle.value = state
+  })
   renderer.mount(mapContainer.value)
   renderer.resize()
   rendererMounted.value = true
@@ -65,10 +93,16 @@ onMounted(() => {
   renderMap()
 })
 
-watch([cells, selectedMode], renderMap)
+watch(
+  [cells, selectedMode, () => props.incidents, () => props.selectedIncidentId, () => props.hoveredIncidentId],
+  renderMap,
+)
 
 onBeforeUnmount(() => {
   window.removeEventListener("resize", handleResize)
+  unsubscribeSelect?.()
+  unsubscribePreview?.()
+  unsubscribeLifecycle?.()
   renderer.dispose()
   rendererMounted.value = false
 })
@@ -133,6 +167,24 @@ onBeforeUnmount(() => {
     >
       Neutral total-density is shown in All mode. Select a category to see its approved color.
     </p>
+
+    <div
+      v-if="isMapDegraded || isMapRecovering"
+      class="incident-map-panel__notice incident-map-panel__notice--lifecycle"
+      data-map-status
+      role="status"
+    >
+      <span v-if="isMapDegraded">Base map unavailable. Incident overlays remain available.</span>
+      <span v-else>Restoring base map.</span>
+      <button
+        v-if="isMapDegraded"
+        type="button"
+        data-map-retry
+        @click="renderer.retry"
+      >
+        Retry map
+      </button>
+    </div>
 
     <ul
       class="incident-map-panel__legend"

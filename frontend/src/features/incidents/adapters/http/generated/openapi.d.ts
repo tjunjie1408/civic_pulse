@@ -279,6 +279,28 @@ export interface components {
             /** Replayed */
             readonly replayed: boolean;
         };
+        /** ComplaintSummaryResponse */
+        readonly ComplaintSummaryResponse: {
+            readonly category: components["schemas"]["Category"];
+            /**
+             * Complaint Id
+             * Format: uuid
+             */
+            readonly complaint_id: string;
+            /** Latitude */
+            readonly latitude: number;
+            /** Longitude */
+            readonly longitude: number;
+            /** Photo Available */
+            readonly photo_available: boolean;
+            /**
+             * Reported At
+             * Format: date-time
+             */
+            readonly reported_at: string;
+            /** Text */
+            readonly text: string;
+        };
         /** GeoPointResponse */
         readonly GeoPointResponse: {
             /**
@@ -332,6 +354,7 @@ export interface components {
             readonly confirmed_edges: readonly components["schemas"]["RelationshipEdgeResponse"][];
             /** Confirmed Report Count */
             readonly confirmed_report_count: number;
+            readonly confirmed_reports: components["schemas"]["IncidentEvidencePreviewResponse"];
             /** Conflict Reasons */
             readonly conflict_reasons: readonly string[];
             /**
@@ -359,6 +382,15 @@ export interface components {
             /** Review Candidates */
             readonly review_candidates: readonly components["schemas"]["ReviewCandidateResponse"][];
             readonly status: components["schemas"]["ClusteringStatus"];
+        };
+        /** IncidentEvidencePreviewResponse */
+        readonly IncidentEvidencePreviewResponse: {
+            /** Has More */
+            readonly has_more: boolean;
+            /** Items */
+            readonly items: readonly components["schemas"]["ComplaintSummaryResponse"][];
+            /** Total */
+            readonly total: number;
         };
         /** IncidentListResponse */
         readonly IncidentListResponse: {

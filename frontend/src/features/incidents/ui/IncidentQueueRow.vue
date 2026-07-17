@@ -7,10 +7,33 @@ import type {
   IncidentSummary,
   OperationalPriorityLevel,
 } from "../domain/incident"
+import type { IncidentDetail } from "../domain/incident"
 
 const props = defineProps<{
   readonly incident: IncidentSummary
+  readonly selected?: boolean
+  readonly hovered?: boolean
+  readonly expanded?: boolean
+  readonly detail?: IncidentDetail | null
+  readonly detailState?: "idle" | "loading" | "ready" | "missing" | "failed"
 }>()
+
+const emit = defineEmits<{
+  (event: "select", incidentId: string): void
+  (event: "preview", incidentId: string | null): void
+  (event: "open-detail", incidentId: string): void
+}>()
+
+function selectIncident(): void {
+  emit("select", props.incident.incidentId)
+}
+
+function handleKeydown(event: KeyboardEvent): void {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault()
+    selectIncident()
+  }
+}
 
 const categoryLabels: Readonly<Record<IncidentCategory, string>> = {
   pothole: "Pothole / road",
@@ -66,7 +89,24 @@ const abbreviatedSnapshotId = computed(() => props.incident.incidentId.slice(0, 
 
 <template>
   <li class="incident-queue-row">
-    <article class="incident-queue-row__ledger-entry">
+    <article
+      class="incident-queue-row__ledger-entry"
+      :class="{
+        'incident-queue-row--selected': props.selected === true,
+        'incident-queue-row--hovered': props.hovered === true,
+        'incident-queue-row--expanded': props.expanded === true,
+      }"
+      :data-incident-id="incident.incidentId"
+      role="button"
+      tabindex="0"
+      :aria-pressed="props.selected === true"
+      @click="selectIncident"
+      @keydown="handleKeydown"
+      @mouseenter="emit('preview', incident.incidentId)"
+      @mouseleave="emit('preview', null)"
+      @focus="emit('preview', incident.incidentId)"
+      @blur="emit('preview', null)"
+    >
       <header class="incident-queue-row__header">
         <p class="incident-queue-row__priority">
           {{ priority }}
@@ -107,5 +147,75 @@ const abbreviatedSnapshotId = computed(() => props.incident.incidentId.slice(0, 
         </small>
       </footer>
     </article>
+
+    <section
+      v-if="props.expanded"
+      class="incident-queue-row__detail"
+      data-incident-detail
+      :aria-labelledby="`incident-detail-heading-${incident.incidentId}`"
+    >
+      <h3 :id="`incident-detail-heading-${incident.incidentId}`">
+        Confirmed evidence preview
+      </h3>
+
+      <p
+        v-if="props.detailState === 'loading' || props.detailState === 'idle'"
+        class="incident-queue-row__detail-status"
+        role="status"
+      >
+        Loading confirmed reports…
+      </p>
+      <p
+        v-else-if="props.detailState === 'missing'"
+        class="incident-queue-row__detail-status"
+        role="status"
+      >
+        Confirmed evidence is no longer available for this snapshot.
+      </p>
+      <p
+        v-else-if="props.detailState === 'failed'"
+        class="incident-queue-row__detail-status"
+        role="status"
+      >
+        Unable to load confirmed reports for this snapshot.
+      </p>
+
+      <template v-else-if="props.detail !== null && props.detail !== undefined">
+        <p data-confirmed-report-count>
+          Showing {{ props.detail.confirmedReports.items.length }} of
+          {{ props.detail.confirmedReports.total }} confirmed reports.
+        </p>
+        <ul
+          class="incident-queue-row__reports"
+          aria-label="Confirmed report preview"
+        >
+          <li
+            v-for="report in props.detail.confirmedReports.items"
+            :key="report.complaintId"
+            class="incident-queue-row__report"
+          >
+            <p>{{ report.text }}</p>
+            <small>
+              {{ report.category }} · {{ report.latitude.toFixed(4) }}, {{ report.longitude.toFixed(4) }} ·
+              {{ report.photoAvailable ? "Photo attached" : "No photo attached" }}
+            </small>
+          </li>
+        </ul>
+        <p
+          v-if="props.detail.confirmedReports.hasMore"
+          data-confirmed-report-more
+          class="incident-queue-row__detail-status"
+        >
+          More reports are available in the full incident.
+        </p>
+        <button
+          type="button"
+          data-open-full-incident
+          @click.stop="emit('open-detail', incident.incidentId)"
+        >
+          Open full incident
+        </button>
+      </template>
+    </section>
   </li>
 </template>

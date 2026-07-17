@@ -34,6 +34,22 @@ class ReviewCandidateResponse(RelationshipEdgeResponse):
     pass
 
 
+class ComplaintSummaryResponse(ApiModel):
+    complaint_id: UUID
+    text: str
+    category: Category
+    latitude: float
+    longitude: float
+    reported_at: datetime
+    photo_available: bool
+
+
+class IncidentEvidencePreviewResponse(ApiModel):
+    items: list[ComplaintSummaryResponse]
+    total: int
+    has_more: bool
+
+
 class IncidentSummaryResponse(ApiModel):
     incident_id: UUID
     status: ClusteringStatus
@@ -53,6 +69,7 @@ class IncidentDetailResponse(IncidentSummaryResponse):
     review_candidate_ids: list[UUID]
     confirmed_edges: list[RelationshipEdgeResponse]
     review_candidates: list[ReviewCandidateResponse]
+    confirmed_reports: IncidentEvidencePreviewResponse
 
 
 class IncidentListResponse(ApiModel):

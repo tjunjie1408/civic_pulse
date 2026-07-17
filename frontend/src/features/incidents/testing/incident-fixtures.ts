@@ -89,3 +89,63 @@ export const incidentPageFixture = {
   offset: 0,
   total: 2,
 } as const satisfies IncidentPage
+
+export const validIncidentDetailTransportFixture = {
+  ...validIncidentListTransportFixture.items[0],
+  complaint_ids: ["00000000-0000-4000-8000-000000000001"],
+  review_candidate_ids: [],
+  confirmed_edges: [],
+  review_candidates: [],
+  confirmed_reports: {
+    items: [
+      {
+        complaint_id: "00000000-0000-4000-8000-000000000001",
+        text: "Street light is out near the community hall",
+        category: "street_light",
+        latitude: 1.3522,
+        longitude: 103.8199,
+        reported_at: "2026-07-16T02:15:00Z",
+        photo_available: true,
+      },
+    ],
+    total: 4,
+    has_more: true,
+  },
+} as const
+
+export const incidentDetailFixture = {
+  incidentId: validIncidentDetailTransportFixture.incident_id,
+  status: validIncidentDetailTransportFixture.status,
+  categories: validIncidentDetailTransportFixture.category_summary,
+  priority: {
+    level: "high",
+    reasons: ["Multiple confirmed reports"],
+    policyVersion: "priority-v1",
+  },
+  confirmedReportCount: validIncidentDetailTransportFixture.confirmed_report_count,
+  pendingCandidateCount: validIncidentDetailTransportFixture.pending_candidate_count,
+  centroid: validIncidentDetailTransportFixture.centroid,
+  radiusMetres: validIncidentDetailTransportFixture.radius_metres,
+  earliestReportedAt: validIncidentDetailTransportFixture.earliest_reported_at,
+  latestReportedAt: validIncidentDetailTransportFixture.latest_reported_at,
+  conflictReasons: validIncidentDetailTransportFixture.conflict_reasons,
+  complaintIds: validIncidentDetailTransportFixture.complaint_ids,
+  reviewCandidateIds: validIncidentDetailTransportFixture.review_candidate_ids,
+  confirmedEdges: [],
+  reviewCandidates: [],
+  confirmedReports: {
+    items: [
+      {
+        complaintId: "00000000-0000-4000-8000-000000000001",
+        text: "Street light is out near the community hall",
+        category: "street_light",
+        latitude: 1.3522,
+        longitude: 103.8199,
+        reportedAt: "2026-07-16T02:15:00Z",
+        photoAvailable: true,
+      },
+    ],
+    total: 4,
+    hasMore: true,
+  },
+} as const

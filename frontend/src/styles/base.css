@@ -242,6 +242,24 @@ button {
   background: #f7f9fa;
 }
 
+.incident-map-panel__notice--lifecycle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.incident-map-panel__notice--lifecycle button {
+  flex: 0 0 auto;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--divider);
+  border-radius: 2px;
+  background: var(--paper-white);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-small);
+}
+
 .incident-map-panel__legend {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -299,6 +317,25 @@ button {
 
 .incident-queue-row__ledger-entry:hover {
   background: #fbfcfd;
+}
+
+.incident-queue-row__ledger-entry:focus-visible {
+  z-index: 1;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.incident-queue-row--hovered {
+  background: #fbfcfd;
+}
+
+.incident-queue-row--selected {
+  border-bottom-color: var(--accent);
+  background: #eef6f8;
+}
+
+.incident-queue-row--selected::before {
+  background: var(--accent);
 }
 
 .incident-queue-row__header {

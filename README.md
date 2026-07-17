@@ -136,6 +136,16 @@ pnpm --dir frontend run dev -- --host 127.0.0.1
 
 Vite proxies `/api` to the API at `http://127.0.0.1:8000`; the frontend therefore remains an HTTP client and does not recreate server-owned ordering, matching, clustering, or priority logic.
 
+When port 8000 is already occupied, keep the API and Vite on temporary free ports without changing the default:
+
+```powershell
+uv run --offline uvicorn civicpulse.runtime:create_runtime_app --factory --host 127.0.0.1 --port 8010
+$env:CIVICPULSE_API_PROXY_TARGET = "http://127.0.0.1:8010"
+pnpm --dir frontend run dev -- --host 127.0.0.1 --port 5174
+```
+
+`CIVICPULSE_API_PROXY_TARGET` is a local development override only; when unset, the proxy target remains `http://127.0.0.1:8000`.
+
 ### 1. Install dependencies
 
 PowerShell:

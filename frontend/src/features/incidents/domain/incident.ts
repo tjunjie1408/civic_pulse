@@ -43,11 +43,28 @@ export interface IncidentRelationship {
   readonly matcherRecommendation: IncidentMatchState | null
 }
 
+export interface IncidentComplaintSummary {
+  readonly complaintId: string
+  readonly text: string
+  readonly category: IncidentCategory
+  readonly latitude: number
+  readonly longitude: number
+  readonly reportedAt: string
+  readonly photoAvailable: boolean
+}
+
+export interface IncidentEvidencePreview {
+  readonly items: readonly IncidentComplaintSummary[]
+  readonly total: number
+  readonly hasMore: boolean
+}
+
 export interface IncidentDetail extends IncidentSummary {
   readonly complaintIds: readonly string[]
   readonly reviewCandidateIds: readonly string[]
   readonly confirmedEdges: readonly IncidentRelationship[]
   readonly reviewCandidates: readonly IncidentRelationship[]
+  readonly confirmedReports: IncidentEvidencePreview
 }
 
 export interface IncidentPage {

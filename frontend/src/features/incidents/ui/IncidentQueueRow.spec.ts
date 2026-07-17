@@ -6,6 +6,7 @@ import type {
   OperationalPriorityLevel,
 } from "../domain/incident"
 import { incidentPageFixture } from "../testing/incident-fixtures"
+import { incidentDetailFixture } from "../testing/incident-fixtures"
 import IncidentQueueRow from "./IncidentQueueRow.vue"
 
 const templateIncident = incidentPageFixture.items[0]
@@ -86,5 +87,63 @@ describe("IncidentQueueRow", () => {
     const snapshot = wrapper.get("small.incident-queue-row__snapshot")
     expect(snapshot.text()).toBe("Snapshot ffffffff")
     expect(snapshot.text()).not.toContain("ffffffff-ffff-4fff-8fff-ffffffffffff")
+  })
+
+  it("exposes selected state and emits selection from click and keyboard activation", async () => {
+    const wrapper = mount(IncidentQueueRow, {
+      props: { incident: incident(), selected: true },
+    })
+    const entry = wrapper.get("article")
+
+    expect(entry.attributes("role")).toBe("button")
+    expect(entry.attributes("tabindex")).toBe("0")
+    expect(entry.attributes("aria-pressed")).toBe("true")
+    expect(entry.classes()).toContain("incident-queue-row--selected")
+
+    await entry.trigger("click")
+    await entry.trigger("keydown", { key: "Enter" })
+    await entry.trigger("keydown", { key: " " })
+
+    expect(wrapper.emitted("select")).toHaveLength(3)
+    expect(wrapper.emitted("select")?.every((event) => event[0] === incident().incidentId)).toBe(true)
+  })
+
+  it("emits preview state from pointer and keyboard focus", async () => {
+    const wrapper = mount(IncidentQueueRow, {
+      props: { incident: incident(), hovered: true },
+    })
+    const entry = wrapper.get("article")
+
+    expect(entry.classes()).toContain("incident-queue-row--hovered")
+    await entry.trigger("mouseenter")
+    await entry.trigger("focus")
+    await entry.trigger("mouseleave")
+    await entry.trigger("blur")
+
+    expect(wrapper.emitted("preview")).toEqual([
+      [incident().incidentId],
+      [incident().incidentId],
+      [null],
+      [null],
+    ])
+  })
+
+  it("renders a bounded confirmed-report preview only when expanded", async () => {
+    const wrapper = mount(IncidentQueueRow, {
+      props: {
+        incident: incident({ incidentId: incidentDetailFixture.incidentId }),
+        expanded: true,
+        detail: incidentDetailFixture,
+      },
+    })
+
+    expect(wrapper.get("[data-incident-detail]").text()).toContain(
+      "Street light is out near the community hall",
+    )
+    expect(wrapper.get("[data-confirmed-report-count]").text()).toContain("4")
+    expect(wrapper.get("[data-confirmed-report-more]").text()).toContain("More reports")
+
+    await wrapper.get("[data-open-full-incident]").trigger("click")
+    expect(wrapper.emitted("open-detail")).toEqual([[incidentDetailFixture.incidentId]])
   })
 })

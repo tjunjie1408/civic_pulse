@@ -237,6 +237,51 @@
         "title": "ComplaintSubmissionResponse",
         "type": "object"
       },
+      "ComplaintSummaryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "complaint_id": {
+            "format": "uuid",
+            "title": "Complaint Id",
+            "type": "string"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          },
+          "photo_available": {
+            "title": "Photo Available",
+            "type": "boolean"
+          },
+          "reported_at": {
+            "format": "date-time",
+            "title": "Reported At",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "complaint_id",
+          "text",
+          "category",
+          "latitude",
+          "longitude",
+          "reported_at",
+          "photo_available"
+        ],
+        "title": "ComplaintSummaryResponse",
+        "type": "object"
+      },
       "GeoPointResponse": {
         "additionalProperties": false,
         "properties": {
@@ -379,6 +424,9 @@
             "title": "Confirmed Report Count",
             "type": "integer"
           },
+          "confirmed_reports": {
+            "$ref": "#/components/schemas/IncidentEvidencePreviewResponse"
+          },
           "conflict_reasons": {
             "items": {
               "type": "string"
@@ -453,9 +501,37 @@
           "complaint_ids",
           "review_candidate_ids",
           "confirmed_edges",
-          "review_candidates"
+          "review_candidates",
+          "confirmed_reports"
         ],
         "title": "IncidentDetailResponse",
+        "type": "object"
+      },
+      "IncidentEvidencePreviewResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ComplaintSummaryResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "has_more"
+        ],
+        "title": "IncidentEvidencePreviewResponse",
         "type": "object"
       },
       "IncidentListResponse": {

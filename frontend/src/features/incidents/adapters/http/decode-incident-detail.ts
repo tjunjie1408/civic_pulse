@@ -1,6 +1,8 @@
 import type {
   IncidentCategory,
+  IncidentComplaintSummary,
   IncidentDetail,
+  IncidentEvidencePreview,
   IncidentMatchState,
   IncidentRelationship,
   IncidentRelationshipDecisionSource,
@@ -14,6 +16,7 @@ type IncidentDetailTransport = components["schemas"]["IncidentDetailResponse"]
 type CentroidTransport = IncidentDetailTransport["centroid"]
 type PriorityTransport = NonNullable<IncidentDetailTransport["priority"]>
 type RelationshipTransport = IncidentDetailTransport["confirmed_edges"][number]
+type ComplaintTransport = IncidentDetailTransport["confirmed_reports"]["items"][number]
 
 const INCIDENT_KEYS = [
   "incident_id",
@@ -31,6 +34,7 @@ const INCIDENT_KEYS = [
   "review_candidate_ids",
   "confirmed_edges",
   "review_candidates",
+  "confirmed_reports",
 ] as const satisfies readonly (keyof IncidentDetailTransport)[]
 const CENTROID_KEYS = ["latitude", "longitude"] as const satisfies readonly (
   keyof CentroidTransport
@@ -46,6 +50,18 @@ const RELATIONSHIP_KEYS = [
   "decision_source",
   "matcher_recommendation",
 ] as const satisfies readonly (keyof RelationshipTransport)[]
+const COMPLAINT_KEYS = [
+  "complaint_id",
+  "text",
+  "category",
+  "latitude",
+  "longitude",
+  "reported_at",
+  "photo_available",
+] as const satisfies readonly (keyof ComplaintTransport)[]
+const EVIDENCE_KEYS = ["items", "total", "has_more"] as const satisfies readonly (
+  keyof IncidentDetailTransport["confirmed_reports"]
+)[]
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const ISO_DATE_TIME_PATTERN =
@@ -79,6 +95,12 @@ function isDenseArray(value: unknown): value is unknown[] {
 function requireFiniteNumber(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return invalidResponse()
   return value
+}
+
+function requireCount(value: unknown): number {
+  const count = requireFiniteNumber(value)
+  if (!Number.isInteger(count) || count < 0) return invalidResponse()
+  return count
 }
 
 function requireString(value: unknown): string {
@@ -218,6 +240,31 @@ function decodeRelationships(value: unknown): readonly IncidentRelationship[] {
   return value.map(decodeRelationship)
 }
 
+function decodeComplaintSummary(value: unknown): IncidentComplaintSummary {
+  if (!hasExactKeys(value, COMPLAINT_KEYS)) return invalidResponse()
+  if (typeof value.photo_available !== "boolean") return invalidResponse()
+  return {
+    complaintId: requireUuid(value.complaint_id),
+    text: requireString(value.text),
+    category: decodeCategory(value.category),
+    latitude: requireFiniteNumber(value.latitude),
+    longitude: requireFiniteNumber(value.longitude),
+    reportedAt: requireIsoDateTime(value.reported_at),
+    photoAvailable: value.photo_available,
+  }
+}
+
+function decodeEvidencePreview(value: unknown): IncidentEvidencePreview {
+  if (!hasExactKeys(value, EVIDENCE_KEYS) || !isDenseArray(value.items)) {
+    return invalidResponse()
+  }
+  return {
+    items: value.items.map(decodeComplaintSummary),
+    total: requireCount(value.total),
+    hasMore: typeof value.has_more === "boolean" ? value.has_more : invalidResponse(),
+  }
+}
+
 export function decodeIncidentDetail(value: unknown): IncidentDetail {
   if (!hasExactKeys(value, INCIDENT_KEYS)) return invalidResponse()
   return {
@@ -236,5 +283,6 @@ export function decodeIncidentDetail(value: unknown): IncidentDetail {
     reviewCandidateIds: decodeUuidArray(value.review_candidate_ids),
     confirmedEdges: decodeRelationships(value.confirmed_edges),
     reviewCandidates: decodeRelationships(value.review_candidates),
+    confirmedReports: decodeEvidencePreview(value.confirmed_reports),
   }
 }

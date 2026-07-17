@@ -1,9 +1,14 @@
 import { mount } from "@vue/test-utils"
+import { nextTick } from "vue"
 import { describe, expect, it, vi } from "vitest"
 
+import type {
+  IncidentMapRenderer,
+  IncidentMapView,
+  MapLifecycleState,
+  MapRenderStrategy,
+} from "../application/incident-map-port"
 import type { IncidentSummary } from "../domain/incident"
-import type { HeatCell, HeatmapMode } from "../domain/heatmap"
-import type { IncidentMapRenderer, MapRenderStrategy } from "../application/incident-map-port"
 import IncidentMapPanel from "./IncidentMapPanel.vue"
 
 const floodingIncident: IncidentSummary = {
@@ -28,23 +33,31 @@ const drainIncident: IncidentSummary = {
 }
 
 interface RendererSpy extends IncidentMapRenderer {
-  readonly renders: Array<{ cells: readonly HeatCell[]; mode: HeatmapMode }>
+  readonly renders: IncidentMapView[]
   readonly mountSpy: ReturnType<typeof vi.fn>
   readonly disposeSpy: ReturnType<typeof vi.fn>
   readonly resizeSpy: ReturnType<typeof vi.fn>
+  readonly retrySpy: ReturnType<typeof vi.fn>
+  readonly emitSelect: (incidentId: string) => void
+  readonly emitPreview: (incidentId: string | null) => void
+  readonly emitLifecycle: (state: MapLifecycleState) => void
 }
 
 function rendererSpy(strategy: MapRenderStrategy = "neutral-density"): RendererSpy {
-  const renders: Array<{ cells: readonly HeatCell[]; mode: HeatmapMode }> = []
+  const renders: IncidentMapView[] = []
+  const selectListeners = new Set<(incidentId: string) => void>()
+  const previewListeners = new Set<(incidentId: string | null) => void>()
+  const lifecycleListeners = new Set<(state: MapLifecycleState) => void>()
   const mountSpy = vi.fn<(container: HTMLElement) => void>()
   const renderSpy = vi.fn(
-    (cells: readonly HeatCell[], mode: HeatmapMode): MapRenderStrategy => {
-      renders.push({ cells, mode })
-      return mode.kind === "all" ? strategy : "category-heat"
+    (view: IncidentMapView): MapRenderStrategy => {
+      renders.push(view)
+      return view.mode.kind === "all" ? strategy : "category-heat"
     },
   )
   const disposeSpy = vi.fn<() => void>()
   const resizeSpy = vi.fn<() => void>()
+  const retrySpy = vi.fn<() => void>()
   return {
     renders,
     mountSpy,
@@ -52,8 +65,26 @@ function rendererSpy(strategy: MapRenderStrategy = "neutral-density"): RendererS
     render: renderSpy,
     resizeSpy,
     resize: resizeSpy,
+    onIncidentSelect: (listener) => {
+      selectListeners.add(listener)
+      return () => selectListeners.delete(listener)
+    },
+    onIncidentPreview: (listener) => {
+      previewListeners.add(listener)
+      return () => previewListeners.delete(listener)
+    },
+    onLifecycleChange: (listener) => {
+      lifecycleListeners.add(listener)
+      listener("loading")
+      return () => lifecycleListeners.delete(listener)
+    },
+    retry: retrySpy,
     disposeSpy,
     dispose: disposeSpy,
+    emitSelect: (incidentId) => selectListeners.forEach((listener) => listener(incidentId)),
+    emitPreview: (incidentId) => previewListeners.forEach((listener) => listener(incidentId)),
+    emitLifecycle: (state) => lifecycleListeners.forEach((listener) => listener(state)),
+    retrySpy,
   }
 }
 
@@ -112,5 +143,38 @@ describe("IncidentMapPanel", () => {
     expect(wrapper.get("[data-map-empty]").text()).toContain("No confirmed incident density")
     expect(wrapper.get("select").attributes("aria-label")).toBe("Heatmap category")
     expect(wrapper.get("[data-map-status]").attributes("role")).toBe("status")
+  })
+
+  it("forwards map selection and preview events to the queue page", async () => {
+    const renderer = rendererSpy()
+    const wrapper = mount(IncidentMapPanel, {
+      props: { incidents: [floodingIncident], createRenderer: () => renderer },
+    })
+
+    renderer.emitSelect("flooding-1")
+    renderer.emitPreview("flooding-1")
+    await nextTick()
+
+    expect(wrapper.emitted("select")).toEqual([["flooding-1"]])
+    expect(wrapper.emitted("preview")).toEqual([["flooding-1"]])
+  })
+
+  it("keeps incident overlays available when the base map degrades and offers retry", async () => {
+    const renderer = rendererSpy()
+    const wrapper = mount(IncidentMapPanel, {
+      props: { incidents: [floodingIncident], createRenderer: () => renderer },
+    })
+
+    renderer.emitLifecycle("degraded")
+    await nextTick()
+
+    expect(wrapper.text()).toContain("Base map unavailable")
+    expect(wrapper.get("[data-map-retry]").attributes("type")).toBe("button")
+    await wrapper.get("[data-map-retry]").trigger("click")
+    expect(renderer.retrySpy).toHaveBeenCalledOnce()
+
+    renderer.emitLifecycle("recovering")
+    await nextTick()
+    expect(wrapper.text()).toContain("Restoring base map")
   })
 })
