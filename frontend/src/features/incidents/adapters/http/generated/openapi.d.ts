@@ -118,6 +118,46 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/v1/photos": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /**
+         * Upload Photo
+         * @description Upload JPEG or PNG photo evidence. The media type is detected from the file content; the server assigns the stored name.
+         */
+        readonly post: operations["photosUpload"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/photos/{photo_id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /**
+         * Get Photo
+         * @description Serve stored photo evidence with its recorded media type.
+         */
+        readonly get: operations["photosGet"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/v1/reviews": {
         readonly parameters: {
             readonly query?: never;
@@ -207,6 +247,11 @@ export interface components {
         readonly ApiErrorResponse: {
             readonly error: components["schemas"]["ApiErrorBody"];
         };
+        /** Body_photosUpload */
+        readonly Body_photosUpload: {
+            /** File */
+            readonly file: string;
+        };
         /**
          * Category
          * @description Supported complaint categories; OTHER requires human review.
@@ -231,7 +276,15 @@ export interface components {
              * @description Longitude in decimal degrees.
              */
             readonly longitude: number;
-            /** Photo Path */
+            /**
+             * Photo Id
+             * @description Identifier returned by the photo upload endpoint.
+             */
+            readonly photo_id?: string | null;
+            /**
+             * Photo Path
+             * @description Legacy free-text photo reference; server-managed uploads use photo_id.
+             */
             readonly photo_path?: string | null;
             /**
              * Reported At
@@ -293,6 +346,8 @@ export interface components {
             readonly longitude: number;
             /** Photo Available */
             readonly photo_available: boolean;
+            /** Photo Url */
+            readonly photo_url: string | null;
             /**
              * Reported At
              * Format: date-time
@@ -474,6 +529,18 @@ export interface components {
          * @enum {string}
          */
         readonly MatchState: "auto_match" | "no_match" | "review_required";
+        /** PhotoUploadResponse */
+        readonly PhotoUploadResponse: {
+            /** Byte Size */
+            readonly byte_size: number;
+            /** Media Type */
+            readonly media_type: string;
+            /**
+             * Photo Id
+             * Format: uuid
+             */
+            readonly photo_id: string;
+        };
         /**
          * PriorityLevel
          * @enum {string}
@@ -897,6 +964,98 @@ export interface operations {
                 };
                 content: {
                     readonly "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    readonly photosUpload: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "multipart/form-data": components["schemas"]["Body_photosUpload"];
+            };
+        };
+        readonly responses: {
+            /** @description Successful Response */
+            readonly 201: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PhotoUploadResponse"];
+                };
+            };
+            /** @description Photo exceeds the size cap. */
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unsupported photo content. */
+            readonly 415: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Request validation failed. */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    readonly photosGet: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly photo_id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description Stored JPEG or PNG photo evidence. */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "image/jpeg": string;
+                    readonly "image/png": string;
+                };
+            };
+            /** @description Photo not found. */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Photo identifier validation failed. */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
