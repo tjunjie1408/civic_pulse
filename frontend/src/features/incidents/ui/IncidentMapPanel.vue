@@ -111,22 +111,35 @@ onBeforeUnmount(() => {
           Incident map
         </h2>
       </div>
-      <label class="incident-map-panel__mode">
-        <span>Heatmap category</span>
-        <select
-          v-model="selectedValue"
-          aria-label="Heatmap category"
-        >
-          <option value="all">All confirmed</option>
-          <option
+      <fieldset
+        class="incident-map-panel__mode"
+        data-heatmap-filters
+        aria-label="Heatmap category"
+      >
+        <legend>Heatmap category</legend>
+        <div class="incident-map-panel__filter-chips">
+          <button
+            type="button"
+            class="incident-map-panel__filter-chip"
+            data-heatmap-filter="all"
+            :aria-pressed="selectedValue === 'all'"
+            @click="selectedValue = 'all'"
+          >
+            All confirmed
+          </button>
+          <button
             v-for="category in CATEGORY_OPTIONS"
             :key="category.value"
-            :value="category.value"
+            type="button"
+            class="incident-map-panel__filter-chip"
+            :data-heatmap-filter="category.value"
+            :aria-pressed="selectedValue === category.value"
+            @click="selectedValue = category.value"
           >
             {{ category.label }}
-          </option>
-        </select>
-      </label>
+          </button>
+        </div>
+      </fieldset>
     </header>
 
     <div class="incident-map-panel__map-wrap">

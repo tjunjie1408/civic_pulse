@@ -114,7 +114,7 @@ describe("IncidentMapPanel", () => {
       props: { incidents: [floodingIncident], createRenderer: () => renderer },
     })
 
-    expect(wrapper.get("select").element.value).toBe("all")
+    expect(wrapper.get('[data-heatmap-filter="all"]').attributes("aria-pressed")).toBe("true")
     expect(wrapper.text()).toContain("Flooding")
     expect(renderer.renders.at(-1)?.mode).toEqual({ kind: "all" })
   })
@@ -125,7 +125,7 @@ describe("IncidentMapPanel", () => {
       props: { incidents: [floodingIncident, drainIncident], createRenderer: () => renderer },
     })
 
-    await wrapper.get("select").setValue("flooding")
+    await wrapper.get('[data-heatmap-filter="flooding"]').trigger("click")
 
     expect(renderer.renders.at(-1)?.mode).toEqual({ kind: "category", category: "flooding" })
     expect(renderer.renders.at(-1)?.cells).toEqual([
@@ -145,7 +145,7 @@ describe("IncidentMapPanel", () => {
     expect(legend.text()).toContain("High")
     expect(wrapper.find('[aria-label="Report density"] [data-density-gradient]').exists()).toBe(true)
 
-    await wrapper.get("select").setValue("flooding")
+    await wrapper.get('[data-heatmap-filter="flooding"]').trigger("click")
     expect(wrapper.findAll('[aria-label="Report density"]')).toHaveLength(1)
   })
 
@@ -154,7 +154,7 @@ describe("IncidentMapPanel", () => {
     const wrapper = mount(IncidentMapPanel, { props: { incidents: [], createRenderer: () => renderer } })
 
     expect(wrapper.get("[data-map-empty]").text()).toContain("No confirmed incident density")
-    expect(wrapper.get("select").attributes("aria-label")).toBe("Heatmap category")
+    expect(wrapper.get('[data-heatmap-filters]').attributes("aria-label")).toBe("Heatmap category")
     expect(wrapper.get("[data-map-status]").attributes("role")).toBe("status")
   })
 
