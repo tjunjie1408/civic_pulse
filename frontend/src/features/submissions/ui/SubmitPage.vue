@@ -247,10 +247,18 @@ onBeforeUnmount(clearPhoto)
         <input
           id="report-photo"
           ref="fileInput"
+          class="submit-page__file-input"
           type="file"
           accept="image/jpeg,image/png"
           @change="onPhotoChange"
         >
+        <label
+          for="report-photo"
+          class="submit-page__file-button submit-page__button submit-page__button--secondary"
+          data-photo-picker
+        >
+          {{ selectedFile === null ? "Upload photo" : "Choose another photo" }}
+        </label>
         <p class="submit-page__help">
           JPEG or PNG, up to 8 MB. The photo is stored with the report and appears in the incident detail.
         </p>
@@ -295,6 +303,8 @@ onBeforeUnmount(clearPhoto)
             <button
               v-if="photoUpload.kind === 'failed'"
               type="button"
+              class="submit-page__button submit-page__button--secondary"
+              data-retry-upload
               @click="retryUpload"
             >
               Retry upload
@@ -307,6 +317,8 @@ onBeforeUnmount(clearPhoto)
             </p>
             <button
               type="button"
+              class="submit-page__button submit-page__button--danger"
+              data-remove-photo
               @click="clearPhoto"
             >
               Remove photo
@@ -333,6 +345,7 @@ onBeforeUnmount(clearPhoto)
       <div class="submit-page__actions submit-page__field--wide">
         <button
           type="submit"
+          class="submit-page__button submit-page__button--primary"
           :disabled="state.kind === 'submitting' || photoUpload.kind === 'uploading'"
         >
           {{ state.kind === "submitting" ? "Submitting…" : photoUpload.kind === "uploading" ? "Waiting for photo upload…" : "Submit report" }}
@@ -340,6 +353,7 @@ onBeforeUnmount(clearPhoto)
         <button
           v-if="state.kind === 'failed'"
           type="button"
+          class="submit-page__button submit-page__button--secondary"
           @click="submission.retry"
         >
           Retry submission
@@ -374,6 +388,7 @@ onBeforeUnmount(clearPhoto)
       </dl>
       <button
         type="button"
+        class="submit-page__button submit-page__button--secondary"
         @click="resetForm"
       >
         Submit another report
@@ -439,7 +454,7 @@ onBeforeUnmount(clearPhoto)
 }
 
 .submit-page textarea,
-.submit-page input,
+.submit-page input:not([type="file"]),
 .submit-page select {
   width: 100%;
   min-height: 2.4rem;
@@ -459,9 +474,6 @@ onBeforeUnmount(clearPhoto)
   font-weight: 400;
 }
 
-.submit-page__photo > input {
-  padding: 0.4rem;
-}
 
 .submit-page__preview {
   display: flex;
@@ -485,31 +497,72 @@ onBeforeUnmount(clearPhoto)
   color: var(--graphite);
 }
 
-.submit-page__preview button,
-.submit-page__actions button,
-.submit-page__result button {
-  min-height: 2.35rem;
+.submit-page__file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.submit-page__button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
   margin-top: var(--space-3);
-  padding: 0.45rem 0.8rem;
-  border: 1px solid var(--civic-blue);
+  padding: 0.6rem 1rem;
+  border: 1px solid transparent;
   border-radius: 2px;
-  background: var(--paper-white);
-  color: var(--civic-blue);
-  cursor: pointer;
+  font: inherit;
   font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
 }
 
-.submit-page__actions {
-  display: flex;
-  gap: var(--space-3);
-}
-
-.submit-page__actions button[type="submit"] {
+.submit-page__button--primary {
+  border-color: var(--civic-blue);
   background: var(--civic-blue);
   color: var(--paper-white);
 }
 
-.submit-page button:disabled {
+.submit-page__button--secondary,
+.submit-page__file-button {
+  border-color: var(--civic-blue);
+  background: color-mix(in srgb, var(--civic-blue) 7%, var(--paper-white));
+  color: var(--civic-blue);
+}
+
+.submit-page__button--danger {
+  border-color: color-mix(in srgb, var(--oxblood) 55%, var(--divider));
+  background: var(--paper-white);
+  color: var(--oxblood);
+}
+
+.submit-page__button:hover:not(:disabled),
+.submit-page__file-button:hover {
+  transform: translateY(-1px);
+}
+
+.submit-page__button:focus-visible,
+.submit-page__file-input:focus-visible + .submit-page__file-button {
+  outline: 2px solid var(--paper-white);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--civic-blue);
+}
+
+.submit-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.submit-page__button:disabled {
   cursor: wait;
   opacity: 0.6;
 }
@@ -550,6 +603,17 @@ onBeforeUnmount(clearPhoto)
 .submit-page__result-facts dd {
   margin: 0;
   font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submit-page__button {
+    transition: none;
+  }
+
+  .submit-page__button:hover:not(:disabled),
+  .submit-page__file-button:hover {
+    transform: none;
+  }
 }
 
 @media (max-width: 48rem) {

@@ -61,12 +61,16 @@ describe("SubmitPage", () => {
     await wrapper.get("input[placeholder='3.07000']").setValue("3.07")
     await wrapper.get("input[placeholder='101.52000']").setValue("101.52")
     const photoInput = wrapper.get<HTMLInputElement>("input[type=file]")
+    expect(photoInput.classes()).toContain("submit-page__file-input")
+    expect(wrapper.get('[data-photo-picker]').text()).toBe("Upload photo")
     Object.defineProperty(photoInput.element, "files", { value: [file] })
     await photoInput.trigger("change")
     await flushPromises()
 
     expect(uploadPhoto.execute).toHaveBeenCalledTimes(1)
     expect(wrapper.find("[data-photo-preview]").attributes("src")).toBe("blob:photo-preview")
+    expect(wrapper.get('[data-photo-picker]').text()).toBe("Choose another photo")
+    expect(wrapper.get('button[type="submit"]').classes()).toContain("submit-page__button--primary")
 
     await wrapper.get("form").trigger("submit")
     await flushPromises()
@@ -103,6 +107,8 @@ describe("SubmitPage", () => {
     await wrapper.get("input[placeholder='3.07000']").setValue("3.07")
     await wrapper.get("input[placeholder='101.52000']").setValue("101.52")
     const photoInput = wrapper.get<HTMLInputElement>("input[type=file]")
+    expect(photoInput.classes()).toContain("submit-page__file-input")
+    expect(wrapper.get('[data-photo-picker]').text()).toBe("Upload photo")
     Object.defineProperty(photoInput.element, "files", { value: [file] })
     await photoInput.trigger("change")
     await flushPromises()
@@ -143,11 +149,15 @@ describe("SubmitPage", () => {
     await wrapper.get("input[placeholder='3.07000']").setValue("3.07")
     await wrapper.get("input[placeholder='101.52000']").setValue("101.52")
     const photoInput = wrapper.get<HTMLInputElement>("input[type=file]")
+    expect(photoInput.classes()).toContain("submit-page__file-input")
+    expect(wrapper.get('[data-photo-picker]').text()).toBe("Upload photo")
     Object.defineProperty(photoInput.element, "files", { value: [file] })
     await photoInput.trigger("change")
     await flushPromises()
 
     expect(wrapper.text()).toContain("The photo could not be uploaded. Remove it or try again.")
+    expect(wrapper.get("[data-retry-upload]").classes()).toContain("submit-page__button--secondary")
+    expect(wrapper.get("[data-remove-photo]").classes()).toContain("submit-page__button--danger")
 
     const removePhoto = wrapper
       .findAll("button[type='button']")
