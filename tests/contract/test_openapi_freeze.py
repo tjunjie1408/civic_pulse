@@ -16,6 +16,8 @@ EXPECTED_PATHS = {
     "/api/v1/incidents/{incident_id}",
     "/api/v1/complaints",
     "/api/v1/admin/reset",
+    "/api/v1/photos",
+    "/api/v1/photos/{photo_id}",
     "/api/v1/reviews",
     "/api/v1/reviews/{review_id}",
     "/api/v1/reviews/{review_id}/approve",
@@ -66,7 +68,7 @@ def test_openapi_metadata_paths_and_operation_ids_are_frozen() -> None:
         if isinstance(operation, dict) and "operationId" in operation
     ]
 
-    assert payload["info"] == {"title": "CivicPulse-lite API", "version": "1.0.0"}
+    assert payload["info"] == {"title": "CivicPulse-lite API", "version": "1.1.0"}
     assert set(payload["paths"]) == EXPECTED_PATHS
     assert all(path.startswith("/api/v1/") for path in payload["paths"])
     assert len({operation["operationId"] for operation in operations}) == len(operations)

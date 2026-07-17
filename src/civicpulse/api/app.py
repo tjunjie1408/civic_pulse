@@ -21,7 +21,7 @@ from civicpulse.service import CivicPulseService, HealthReport
 
 class AppSettings(ApiModel):
     title: str = "CivicPulse-lite API"
-    version: str = "1.0.0"
+    version: str = "1.1.0"
     api_prefix: str = "/api/v1"
     admin_reset_enabled: bool = False
     seed_path: str = "data/seed_complaints.json"
