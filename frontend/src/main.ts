@@ -7,4 +7,7 @@ import "./styles/tokens.css"
 
 const services = createAppServices()
 
-createApp(App as Component, { loadIncidentQueue: services.loadIncidentQueue }).mount("#app")
+createApp(App as Component, {
+  loadIncidentQueue: services.loadIncidentQueue,
+  createIncidentMapRenderer: services.createIncidentMapRenderer,
+}).mount("#app")

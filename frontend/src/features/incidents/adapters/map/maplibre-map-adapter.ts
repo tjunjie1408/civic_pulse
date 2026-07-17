@@ -1,7 +1,7 @@
 import type { HeatCell, HeatmapMode } from "../../domain/heatmap"
 import { Map as MapLibreMap, type MapOptions } from "maplibre-gl"
 import { FALLBACK_MAP_STYLE } from "./fallback-style"
-import type { IncidentMapRenderer } from "./map-renderer-port"
+import type { IncidentMapRenderer } from "../../application/incident-map-port"
 
 export interface MapLike {
   isStyleLoaded(): boolean

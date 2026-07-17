@@ -8,6 +8,12 @@
   --divider: #cfd7dd;
   --civic-blue: #245b88;
   --oxblood: #8a2d3b;
+  --map-flooding: #1677a8;
+  --map-blocked-drain: #267f86;
+  --map-pothole: #a4772d;
+  --map-rubbish: #883f4a;
+  --map-street-light: #5b5b88;
+  --map-other: #64748b;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;

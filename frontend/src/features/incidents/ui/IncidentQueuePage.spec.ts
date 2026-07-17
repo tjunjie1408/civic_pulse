@@ -1,7 +1,9 @@
 import { flushPromises, mount } from "@vue/test-utils"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
+import type { IncidentMapRenderer, MapRenderStrategy } from "../application/incident-map-port"
 import type { IncidentListResult } from "../application/incident-list-port"
+import type { HeatCell, HeatmapMode } from "../domain/heatmap"
 import type { IncidentPage } from "../domain/incident"
 import { incidentPageFixture } from "../testing/incident-fixtures"
 import IncidentQueuePage from "./IncidentQueuePage.vue"
@@ -34,6 +36,36 @@ function page(overrides: Partial<IncidentPage> = {}): IncidentPage {
 }
 
 describe("IncidentQueuePage", () => {
+  it("renders the map panel beside the API-ordered queue", async () => {
+    const loader = new ControllableLoadIncidentQueue()
+    const mountSpy = vi.fn()
+    const renderSpy = vi.fn(
+      (_cells: readonly HeatCell[], mode: HeatmapMode): MapRenderStrategy =>
+        mode.kind === "all" ? "neutral-density" : "category-heat",
+    )
+    const renderer: IncidentMapRenderer = {
+      mount: mountSpy,
+      render: renderSpy,
+      resize: vi.fn(),
+      dispose: vi.fn(),
+    }
+    const wrapper = mount(IncidentQueuePage, {
+      props: {
+        loadIncidentQueue: loader,
+        createIncidentMapRenderer: () => renderer,
+      },
+    })
+    loader.resolve(0, { ok: true, page: page() })
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: "IncidentMapPanel" }).exists()).toBe(true)
+    expect(wrapper.findAll("ol > li h2").map((heading) => heading.text())).toEqual([
+      "Street light · Blocked drain",
+      "Other · Flooding",
+    ])
+    expect(mountSpy).toHaveBeenCalledOnce()
+  })
+
   it("shows an aria-busy loading state without a false empty message", () => {
     const loader = new ControllableLoadIncidentQueue()
     const wrapper = mount(IncidentQueuePage, { props: { loadIncidentQueue: loader } })
