@@ -109,10 +109,13 @@ The API contract is versioned under `/api/v1` and protected by a deterministic O
 | Health | `GET /api/v1/health/live`, `GET /api/v1/health/ready` |
 | Incidents | `GET /api/v1/incidents`, `GET /api/v1/incidents/{incident_id}` |
 | Complaints | `POST /api/v1/complaints` with required `Idempotency-Key` |
+| Photos | `POST /api/v1/photos` (multipart upload), `GET /api/v1/photos/{photo_id}` |
 | Reviews | `GET /api/v1/reviews`, `GET /api/v1/reviews/{review_id}` |
 | Review actions | `POST /api/v1/reviews/{review_id}/approve`, `POST /api/v1/reviews/{review_id}/reject` |
 | Demo administration | `POST /api/v1/admin/reset`, disabled by default and bodyless |
 
+
+Photo evidence is stored as files under `data/uploads/` (configurable via `CIVICPULSE_UPLOADS_PATH`) with metadata in SQLite; media types come from content sniffing; the demo reset purges stored photos; the API version is 1.1.0.
 Mutation responses expose previous and new snapshot IDs so clients can refresh without guessing which incident changed.
 
 ## Development setup
@@ -323,7 +326,7 @@ tests/
 - The application is a single-process, local prototype; no authentication framework is included yet.
 - Admin reset is protected by a feature flag and should remain unreachable in an untrusted deployment.
 - Priority is a transparent prototype policy, not causal discovery or a flood prediction model.
-- Photo analysis and SCM-inspired risk propagation are intentionally outside the current core workflow.
+- Photo storage and rendering are supported; automated photo analysis and SCM-inspired risk propagation remain intentionally outside the current core workflow.
 - This repository currently has no declared `LICENSE` file; reuse terms should be clarified before public redistribution.
 - Repository-wide pre-commit is not currently green. Task-scoped tests, Pyright, benchmark,
   performance contracts, and diff checks pass, but repository-wide Ruff/Pyright/pytest-hook
