@@ -81,7 +81,7 @@ function heatLayer(id: string, color: string, filter?: readonly unknown[]) {
         ["heatmap-density"],
         0,
         "rgba(0, 0, 0, 0)",
-        0.2,
+        0.01,
         color,
         1,
         color,
