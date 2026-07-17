@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import uuid
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
@@ -14,6 +15,10 @@ UPLOADS_PREFIX = "uploads/"
 _JPEG_MAGIC = b"\xff\xd8\xff"
 _PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 _EXTENSIONS = {"image/jpeg": "jpg", "image/png": "png"}
+_SERVER_NAME_PATTERN = re.compile(
+    r"^(?P<photo_id>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})"
+    r"\.(?P<extension>jpg|png)$"
+)
 _KNOWN_SUFFIXES = {".jpg", ".png", ".tmp"}
 
 
@@ -75,13 +80,15 @@ def photo_url_for(photo_path: str | None) -> str | None:
         return None
 
     stored_name = photo_path[len(UPLOADS_PREFIX) :]
-    stem, _, extension = stored_name.partition(".")
-    if extension not in _EXTENSIONS.values():
+    match = _SERVER_NAME_PATTERN.fullmatch(stored_name)
+    if match is None:
         return None
 
     try:
-        photo_id = UUID(stem)
+        photo_id = UUID(match.group("photo_id"))
     except ValueError:
+        return None
+    if photo_id.version != 4:
         return None
     return f"/api/v1/photos/{photo_id}"
 
@@ -115,6 +122,9 @@ class PhotoStore:
         )
 
     def resolve(self, stored_name: str) -> Path:
+        if _SERVER_NAME_PATTERN.fullmatch(stored_name) is None:
+            raise PhotoNotFound
+
         path = self.directory / stored_name
         if not path.is_file():
             raise PhotoNotFound

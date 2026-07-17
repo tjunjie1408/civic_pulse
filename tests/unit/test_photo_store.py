@@ -74,8 +74,28 @@ def test_photo_url_for_derives_url_only_for_server_paths(tmp_path: Path) -> None
     path = photo_path_for(stored)
     assert path == f"uploads/{stored.photo_id}.jpg"
     assert photo_url_for(path) == f"/api/v1/photos/{stored.photo_id}"
+    assert photo_url_for("uploads/00000000-0000-0000-0000-000000000000.jpg") is None
     assert photo_url_for(None) is None
     assert photo_url_for("evidence.jpg") is None
     assert photo_url_for("uploads/not-a-uuid.jpg") is None
     assert photo_url_for("uploads/00000000-0000-0000-0000-000000000001.gif") is None
     assert isinstance(stored.photo_id, UUID)
+
+
+@pytest.mark.parametrize(
+    ("stored_name",),
+    [
+        ("../escape.jpg",),
+        ("..\\escape.jpg",),
+        ("/absolute.jpg",),
+        (r"C:\\absolute.jpg",),
+        ("nested/escape.jpg",),
+        ("uploads/../escape.jpg",),
+    ],
+)
+def test_resolve_rejects_traversal_and_absolute_names(
+    tmp_path: Path, stored_name: str
+) -> None:
+    store = PhotoStore(tmp_path / "uploads")
+    with pytest.raises(PhotoNotFound):
+        store.resolve(stored_name)
