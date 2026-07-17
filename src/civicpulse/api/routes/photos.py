@@ -82,7 +82,18 @@ async def upload_photo(
     response_class=FileResponse,
     description="Serve stored photo evidence with its recorded media type.",
     responses={
+        200: {
+            "description": "Stored JPEG or PNG photo evidence.",
+            "content": {
+                "image/jpeg": {"schema": {"type": "string", "format": "binary"}},
+                "image/png": {"schema": {"type": "string", "format": "binary"}},
+            },
+        },
         404: {"model": ApiErrorResponse, "description": "Photo not found."},
+        422: {
+            "model": ApiErrorResponse,
+            "description": "Photo identifier validation failed.",
+        },
     },
 )
 def get_photo(

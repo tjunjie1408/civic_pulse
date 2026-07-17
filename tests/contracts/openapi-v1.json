@@ -1898,7 +1898,21 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response"
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Stored JPEG or PNG photo evidence."
           },
           "404": {
             "content": {
@@ -1914,11 +1928,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Photo identifier validation failed."
           }
         },
         "summary": "Get Photo",

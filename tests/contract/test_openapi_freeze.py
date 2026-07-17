@@ -92,6 +92,18 @@ def test_complaint_submission_contract_preserves_header_and_errors() -> None:
     assert_error_schema(operation, "409")
 
 
+def test_photo_fetch_contract_preserves_binary_media_and_errors() -> None:
+    operation = document()["paths"]["/api/v1/photos/{photo_id}"]["get"]
+    success_content = operation["responses"]["200"]["content"]
+
+    assert set(success_content) == {"image/jpeg", "image/png"}
+    for media_type in success_content.values():
+        assert media_type["schema"] == {"format": "binary", "type": "string"}
+    assert {"404", "422"}.issubset(error_response_codes(operation))
+    assert_error_schema(operation, "404")
+    assert_error_schema(operation, "422")
+
+
 def test_review_resolution_contract_preserves_payload_errors_and_transition_fields() -> None:
     payload = document()
     schema = payload["components"]["schemas"]["ReviewMutationResponse"]
