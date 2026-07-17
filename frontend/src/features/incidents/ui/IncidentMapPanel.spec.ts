@@ -68,9 +68,10 @@ describe("IncidentMapPanel", () => {
     expect(wrapper.get("h2").text()).toContain("Incident map")
     expect(wrapper.find("[data-map-container]").exists()).toBe(true)
     expect(renderer.mountSpy).toHaveBeenCalledOnce()
+    expect(renderer.resizeSpy).toHaveBeenCalledOnce()
 
     window.dispatchEvent(new Event("resize"))
-    expect(renderer.resizeSpy).toHaveBeenCalledOnce()
+    expect(renderer.resizeSpy).toHaveBeenCalledTimes(2)
 
     wrapper.unmount()
     expect(renderer.disposeSpy).toHaveBeenCalledOnce()

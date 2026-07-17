@@ -59,6 +59,7 @@ onMounted(() => {
     return
   }
   renderer.mount(mapContainer.value)
+  renderer.resize()
   rendererMounted.value = true
   window.addEventListener("resize", handleResize)
   renderMap()
