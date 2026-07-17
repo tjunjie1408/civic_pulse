@@ -62,6 +62,45 @@ def test_purge_removes_stored_files(tmp_path: Path) -> None:
     assert store.purge() == 0
 
 
+def test_purge_preserves_files_not_owned_by_photo_store(tmp_path: Path) -> None:
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    sentinels = {
+        "family-photo.jpg": b"jpeg sentinel",
+        "00000000-0000-0000-0000-000000000000.png": b"nil UUID sentinel",
+        "6ba7b810-9dad-11d1-80b4-00c04fd430c8.jpg": b"v1 UUID sentinel",
+        "550e8400-e29b-41d4-a716-446655440000.tmp": b"bare tmp sentinel",
+        "notes.tmp": b"temporary sentinel",
+    }
+    for name, content in sentinels.items():
+        (uploads / name).write_bytes(content)
+
+    store = PhotoStore(uploads)
+
+    assert store.purge() == 0
+    assert {path.name: path.read_bytes() for path in uploads.iterdir()} == sentinels
+
+
+def test_purge_removes_only_owned_uuid_v4_photos_and_matching_temp_files(
+    tmp_path: Path,
+) -> None:
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    owned_names = {
+        "550e8400-e29b-41d4-a716-446655440000.jpg",
+        "550e8400-e29b-41d4-a716-446655440000.jpg.tmp",
+        "123e4567-e89b-42d3-a456-426614174000.png",
+        "123e4567-e89b-42d3-a456-426614174000.png.tmp",
+    }
+    for name in owned_names:
+        (uploads / name).write_bytes(b"owned")
+
+    store = PhotoStore(uploads)
+
+    assert store.purge() == len(owned_names)
+    assert list(uploads.iterdir()) == []
+
+
 def test_service_reset_purges_photos(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

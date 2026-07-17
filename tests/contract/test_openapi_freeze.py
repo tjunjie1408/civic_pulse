@@ -99,9 +99,21 @@ def test_photo_fetch_contract_preserves_binary_media_and_errors() -> None:
     assert set(success_content) == {"image/jpeg", "image/png"}
     for media_type in success_content.values():
         assert media_type["schema"] == {"format": "binary", "type": "string"}
-    assert {"404", "422"}.issubset(error_response_codes(operation))
+    assert {"404", "422", "500", "503"}.issubset(error_response_codes(operation))
     assert_error_schema(operation, "404")
     assert_error_schema(operation, "422")
+    assert_error_schema(operation, "500")
+    assert_error_schema(operation, "503")
+
+
+def test_photo_upload_contract_publishes_runtime_failure_errors() -> None:
+    operation = document()["paths"]["/api/v1/photos"]["post"]
+
+    assert {"413", "415", "422", "500", "503"}.issubset(
+        error_response_codes(operation)
+    )
+    assert_error_schema(operation, "500")
+    assert_error_schema(operation, "503")
 
 
 def test_review_resolution_contract_preserves_payload_errors_and_transition_fields() -> None:

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-import uuid
 import re
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
@@ -19,7 +19,7 @@ _SERVER_NAME_PATTERN = re.compile(
     r"^(?P<photo_id>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})"
     r"\.(?P<extension>jpg|png)$"
 )
-_KNOWN_SUFFIXES = {".jpg", ".png", ".tmp"}
+_SERVER_FILE_PATTERN = re.compile(_SERVER_NAME_PATTERN.pattern.removesuffix("$") + r"(?:\.tmp)?$")
 
 
 class UnsupportedPhotoType(ValueError):
@@ -142,7 +142,7 @@ class PhotoStore:
 
         removed = 0
         for path in self.directory.iterdir():
-            if path.is_file() and path.suffix in _KNOWN_SUFFIXES:
+            if path.is_file() and _SERVER_FILE_PATTERN.fullmatch(path.name) is not None:
                 path.unlink()
                 removed += 1
         return removed

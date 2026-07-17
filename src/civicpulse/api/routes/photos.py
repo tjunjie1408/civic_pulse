@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -43,6 +44,8 @@ _PHOTO_HEADERS = {
         413: {"model": ApiErrorResponse, "description": "Photo exceeds the size cap."},
         415: {"model": ApiErrorResponse, "description": "Unsupported photo content."},
         422: {"model": ApiErrorResponse, "description": "Request validation failed."},
+        500: {"model": ApiErrorResponse, "description": "Photo persistence failed."},
+        503: {"model": ApiErrorResponse, "description": "Photo storage is unavailable."},
     },
 )
 async def upload_photo(
@@ -60,10 +63,8 @@ async def upload_photo(
     try:
         repository.add_photo(stored, created_at=datetime.now(UTC))
     except Exception as exc:
-        try:
+        with suppress(OSError, PhotoNotFound):
             store.remove(stored.stored_name)
-        except (OSError, PhotoNotFound):
-            pass
         raise ApiError(
             code="internal_error",
             message="An unexpected internal error occurred.",
@@ -94,6 +95,8 @@ async def upload_photo(
             "model": ApiErrorResponse,
             "description": "Photo identifier validation failed.",
         },
+        500: {"model": ApiErrorResponse, "description": "Photo retrieval failed."},
+        503: {"model": ApiErrorResponse, "description": "Photo storage is unavailable."},
     },
 )
 def get_photo(

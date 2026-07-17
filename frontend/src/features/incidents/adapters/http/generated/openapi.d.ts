@@ -1017,6 +1017,24 @@ export interface operations {
                     readonly "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description Photo persistence failed. */
+            readonly 500: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Photo storage is unavailable. */
+            readonly 503: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     readonly photosGet: {
@@ -1051,6 +1069,24 @@ export interface operations {
             };
             /** @description Photo identifier validation failed. */
             readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Photo retrieval failed. */
+            readonly 500: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Photo storage is unavailable. */
+            readonly 503: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
