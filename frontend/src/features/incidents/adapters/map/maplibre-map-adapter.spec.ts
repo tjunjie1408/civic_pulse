@@ -22,12 +22,15 @@ function cells(overrides: Partial<HeatCell> = {}): readonly HeatCell[] {
   ]
 }
 
-function fakeMap() {
+function fakeMap(styleLoaded = true) {
   const listeners = new Map<string, Set<Listener>>()
   const calls: Array<{ method: string; args: unknown[] }> = []
   const sources = new Map<string, unknown>()
   const layers = new Map<string, unknown>()
   const map: MapLike = {
+    isStyleLoaded() {
+      return styleLoaded
+    },
     on(event: string, listener: Listener) {
       calls.push({ method: "on", args: [event, listener] })
       const eventListeners = listeners.get(event) ?? new Set<Listener>()
@@ -65,7 +68,17 @@ function fakeMap() {
       calls.push({ method: "remove", args: [] })
     },
   }
-  return { map, calls, sources, layers }
+  return {
+    map,
+    calls,
+    sources,
+    layers,
+    emit(event: string) {
+      for (const listener of listeners.get(event) ?? []) {
+        listener()
+      }
+    },
+  }
 }
 
 function factoryFor(fake: ReturnType<typeof fakeMap>, options: { style?: unknown }[] = []): MapFactory {
@@ -163,5 +176,35 @@ describe("createMapLibreIncidentMapRenderer", () => {
     const layers = fake.calls.filter((call) => call.method === "addLayer")
     expect(layers).toHaveLength(1)
     expect(layers[0]?.args[0]).toMatchObject({ id: "civicpulse-incident-neutral-heat" })
+  })
+
+  it("queues the latest render until the MapLibre style is loaded", () => {
+    const fake = fakeMap(false)
+    const renderer = createMapLibreIncidentMapRenderer({ createMap: factoryFor(fake) })
+    renderer.mount(document.createElement("div"))
+
+    const strategy = renderer.render(cells(), { kind: "category", category: "flooding" })
+
+    expect(strategy).toBe("category-heat")
+    expect(fake.calls.filter((call) => call.method === "addSource")).toHaveLength(0)
+    expect(fake.calls.filter((call) => call.method === "addLayer")).toHaveLength(0)
+
+    fake.emit("load")
+
+    expect(fake.calls.filter((call) => call.method === "addSource")).toHaveLength(1)
+    expect(fake.calls.filter((call) => call.method === "addLayer")).toHaveLength(1)
+  })
+
+  it("clears a queued render when disposed before the style loads", () => {
+    const fake = fakeMap(false)
+    const renderer = createMapLibreIncidentMapRenderer({ createMap: factoryFor(fake) })
+    renderer.mount(document.createElement("div"))
+    renderer.render(cells(), allMode)
+    renderer.dispose()
+
+    fake.emit("load")
+
+    expect(fake.calls.filter((call) => call.method === "addSource")).toHaveLength(0)
+    expect(fake.calls.filter((call) => call.method === "addLayer")).toHaveLength(0)
   })
 })

@@ -4,6 +4,7 @@ import { FALLBACK_MAP_STYLE } from "./fallback-style"
 import type { IncidentMapRenderer } from "./map-renderer-port"
 
 export interface MapLike {
+  isStyleLoaded(): boolean
   on(event: string, listener: (...args: unknown[]) => void): MapLike
   off(event: string, listener: (...args: unknown[]) => void): MapLike
   addSource(id: string, source: unknown): void
@@ -83,10 +84,19 @@ export function createMapLibreIncidentMapRenderer(
 ): IncidentMapRenderer {
   let map: MapLike | null = null
   let mounted = false
+  let styleReady = false
   let activeLayerId: string | null = null
   let sourceAdded = false
+  let queuedRender: { cells: readonly HeatCell[]; mode: HeatmapMode } | null = null
 
-  const onLoad = () => undefined
+  const onLoad = () => {
+    styleReady = true
+    if (queuedRender !== null && map !== null && mounted) {
+      const nextRender = queuedRender
+      queuedRender = null
+      renderNow(nextRender.cells, nextRender.mode)
+    }
+  }
   const onError = () => undefined
   const onResize = () => undefined
 
@@ -103,14 +113,14 @@ export function createMapLibreIncidentMapRenderer(
       attributionControl: false,
     })
     map.on("load", onLoad).on("error", onError).on("resize", onResize)
+    styleReady = map.isStyleLoaded()
     mounted = true
   }
 
-  function render(cells: readonly HeatCell[], mode: HeatmapMode) {
+  function renderNow(cells: readonly HeatCell[], mode: HeatmapMode) {
     if (map === null || !mounted) {
       throw new Error("Incident map renderer must be mounted before rendering")
     }
-
     if (activeLayerId !== null) {
       map.removeLayer(activeLayerId)
       activeLayerId = null
@@ -140,6 +150,17 @@ export function createMapLibreIncidentMapRenderer(
     return "category-heat" as const
   }
 
+  function render(cells: readonly HeatCell[], mode: HeatmapMode) {
+    if (map === null || !mounted) {
+      throw new Error("Incident map renderer must be mounted before rendering")
+    }
+    if (!styleReady) {
+      queuedRender = { cells: [...cells], mode }
+      return mode.kind === "all" ? ("neutral-density" as const) : ("category-heat" as const)
+    }
+    return renderNow(cells, mode)
+  }
+
   function resize(): void {
     map?.resize()
   }
@@ -157,6 +178,7 @@ export function createMapLibreIncidentMapRenderer(
     }
     map.remove()
     map = null
+    queuedRender = null
     activeLayerId = null
     sourceAdded = false
     mounted = false
