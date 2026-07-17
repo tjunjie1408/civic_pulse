@@ -120,7 +120,14 @@ def submit_complaint(
         )
     resolved_photo_path = request.photo_path
     if request.photo_id is not None:
-        record = repository.get_photo(request.photo_id)
+        try:
+            record = repository.get_photo(request.photo_id)
+        except DatabaseBusy as exc:
+            raise ApiError(
+                code="database_busy",
+                message="The local database is busy; retry the operation.",
+                status_code=503,
+            ) from exc
         if record is None:
             raise ApiError(
                 code="unknown_photo",

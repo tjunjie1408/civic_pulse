@@ -55,3 +55,32 @@ Worktree: `D:\self-learning\codex_hackathon\.worktrees\photo-evidence-storage`
 - I did not modify the OpenAPI freeze snapshot, per Task 7 ownership.
 - The broader deselected pytest run is not fully green due the unrelated read-contract mismatch above.
 - Dashboard submission behavior remains covered by the focused passing contract tests.
+
+## 2026-07-17 review-fix follow-up
+
+Requested review fix:
+
+- Wrap `repository.get_photo(photo_id)` in the existing sanitized `DatabaseBusy -> database_busy / 503` path.
+- Preserve `unknown_photo` when the repository lookup returns `None`.
+- Add focused contract coverage for a busy lookup and direct server-side legacy `photo_path` compatibility.
+
+Changes made:
+
+- `src/civicpulse/api/routes/mutations.py`
+  - Added a `try/except DatabaseBusy` wrapper around `repository.get_photo(request.photo_id)`.
+  - Kept `unknown_photo` handling unchanged for `None`.
+- `tests/contract/test_photo_api.py`
+  - Added `test_complaint_with_photo_id_returns_database_busy_when_lookup_is_busy`.
+  - Added `test_complaint_with_legacy_non_uploads_photo_path_still_succeeds`.
+
+Fresh verification:
+
+- Red step:
+  - `uv run --offline python -m pytest tests/contract/test_photo_api.py -q`
+  - Result before fix: 1 failing test, with `DatabaseBusy` escaping from `repository.get_photo`.
+- Green step:
+  - `uv run --offline python -m pytest tests/contract/test_photo_api.py tests/contract/test_mutation_api.py tests/contract/test_dashboard_submission.py -q`
+  - Result: `33 passed, 1 warning`
+- Type check:
+  - `uv run --offline pyright src scripts`
+  - Result: `0 errors, 0 warnings, 0 informations`

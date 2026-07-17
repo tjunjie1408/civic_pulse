@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from civicpulse.api import create_app
 from civicpulse.photos import MAX_PHOTO_BYTES, PhotoStore, StoredPhoto
-from civicpulse.repository import SQLiteRepository
+from civicpulse.repository import DatabaseBusy, SQLiteRepository
 from tests.contract.test_mutation_api import REQUEST, FakeMutationService
 
 JPEG_BYTES = b"\xff\xd8\xff\xe0" + b"\x00" * 64
@@ -17,6 +17,12 @@ class FailingPhotoRepository(SQLiteRepository):
     def add_photo(self, photo: StoredPhoto, created_at: datetime) -> None:
         del photo, created_at
         raise RuntimeError("database write failed")
+
+
+class BusyPhotoLookupRepository(SQLiteRepository):
+    def get_photo(self, photo_id: UUID) -> None:
+        del photo_id
+        raise DatabaseBusy()
 
 
 def make_client(tmp_path: Path) -> TestClient:
@@ -206,3 +212,33 @@ def test_complaint_rejects_photo_id_and_photo_path_together(tmp_path: Path) -> N
         headers={"Idempotency-Key": "photo-key-4"},
     )
     assert response.status_code == 422
+
+
+def test_complaint_with_legacy_non_uploads_photo_path_still_succeeds(tmp_path: Path) -> None:
+    client, service, _store, _repository = make_submission_client(tmp_path)
+    response = client.post(
+        "/api/v1/complaints",
+        json={**REQUEST, "photo_path": "note.jpg"},
+        headers={"Idempotency-Key": "photo-key-5"},
+    )
+    assert response.status_code == 201
+    submitted_payload, _key = service.submissions[0]
+    assert getattr(submitted_payload, "photo_path") == "note.jpg"
+
+
+def test_complaint_with_photo_id_returns_database_busy_when_lookup_is_busy(tmp_path: Path) -> None:
+    repository = BusyPhotoLookupRepository(tmp_path / "busy-photos.db")
+    repository.initialize()
+    store = PhotoStore(tmp_path / "uploads")
+    service = FakeMutationService()
+    client = TestClient(create_app(service=service, repository=repository, photo_store=store))
+
+    response = client.post(
+        "/api/v1/complaints",
+        json={**REQUEST, "photo_id": "30000000-0000-0000-0000-000000000001"},
+        headers={"Idempotency-Key": "photo-key-6"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "database_busy"
+    assert service.submissions == []
