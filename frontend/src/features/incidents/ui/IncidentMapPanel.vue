@@ -138,7 +138,7 @@ onBeforeUnmount(() => {
       />
       <div
         class="incident-map-panel__density-legend"
-        aria-label="Report density"
+        role="group"`r`n        aria-label="Report density"
       >
         <span>Low</span>
         <span

@@ -140,7 +140,7 @@ describe("IncidentMapPanel", () => {
     })
 
     const legend = wrapper.get('[aria-label="Report density"]')
-    expect(legend.text()).toContain("Low")
+    expect(legend.attributes("role")).toBe("group")`r`n    expect(legend.text()).toContain("Low")
     expect(legend.text()).toContain("High")
     expect(wrapper.find('[aria-label="Report density"] [data-density-gradient]').exists()).toBe(true)
 
