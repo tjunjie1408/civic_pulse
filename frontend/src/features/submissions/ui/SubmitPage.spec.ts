@@ -130,6 +130,48 @@ describe("SubmitPage", () => {
     wrapper.unmount()
   })
 
+  it("locks photo controls until a pending complaint submission resolves", async () => {
+    stubPhotoPreviewUrl()
+    let resolveSubmission: ((value: ComplaintSubmissionResult) => void) | undefined
+    const uploadPhoto = {
+      execute: vi.fn().mockResolvedValue({ ok: true, photoId: PHOTO_ID }),
+    }
+    const submitComplaint = {
+      execute: vi.fn().mockImplementation(
+        () =>
+          new Promise<ComplaintSubmissionResult>((resolve) => {
+            resolveSubmission = resolve
+          }),
+      ),
+    }
+    const wrapper = mount(SubmitPage, { props: { submitComplaint, uploadPhoto } })
+    const file = new File(["fake image"], "field-photo.jpg", { type: "image/jpeg" })
+
+    await wrapper.get("textarea").setValue("Blocked drain near the market")
+    await wrapper.get("input[placeholder='3.07000']").setValue("3.07")
+    await wrapper.get("input[placeholder='101.52000']").setValue("101.52")
+    const photoInput = wrapper.get<HTMLInputElement>("input[type=file]")
+    Object.defineProperty(photoInput.element, "files", { value: [file] })
+    await photoInput.trigger("change")
+    await flushPromises()
+
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+
+    expect(submitComplaint.execute).toHaveBeenCalledTimes(1)
+    expect(photoInput.attributes("disabled")).toBeDefined()
+    expect(wrapper.get("[data-photo-picker]").attributes("aria-disabled")).toBe("true")
+    expect(wrapper.get("[data-remove-photo]").attributes("disabled")).toBeDefined()
+
+    resolveSubmission?.(result)
+    await flushPromises()
+
+    expect(photoInput.attributes("disabled")).toBeUndefined()
+    expect(wrapper.get("[data-photo-picker]").attributes("aria-disabled")).toBeUndefined()
+    expect(wrapper.get("[data-remove-photo]").attributes("disabled")).toBeUndefined()
+    wrapper.unmount()
+  })
+
   it("shows the upload error and submits without a photo after removal", async () => {
     stubPhotoPreviewUrl()
     const requests: ComplaintSubmissionRequest[] = []

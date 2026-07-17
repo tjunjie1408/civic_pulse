@@ -250,12 +250,14 @@ onBeforeUnmount(clearPhoto)
           class="submit-page__file-input"
           type="file"
           accept="image/jpeg,image/png"
+          :disabled="state.kind === 'submitting'"
           @change="onPhotoChange"
         >
         <label
           for="report-photo"
           class="submit-page__file-button submit-page__button submit-page__button--secondary"
           data-photo-picker
+          :aria-disabled="state.kind === 'submitting' ? 'true' : undefined"
         >
           {{ selectedFile === null ? "Upload photo" : "Choose another photo" }}
         </label>
@@ -305,6 +307,7 @@ onBeforeUnmount(clearPhoto)
               type="button"
               class="submit-page__button submit-page__button--secondary"
               data-retry-upload
+              :disabled="state.kind === 'submitting'"
               @click="retryUpload"
             >
               Retry upload
@@ -319,6 +322,7 @@ onBeforeUnmount(clearPhoto)
               type="button"
               class="submit-page__button submit-page__button--danger"
               data-remove-photo
+              :disabled="state.kind === 'submitting'"
               @click="clearPhoto"
             >
               Remove photo
