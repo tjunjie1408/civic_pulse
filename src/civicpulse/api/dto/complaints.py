@@ -22,7 +22,11 @@ class ComplaintCreateRequest(ApiModel):
         default=None,
         description="Identifier returned by the photo upload endpoint.",
     )
-    photo_path: str | None = None
+    photo_path: str | None = Field(
+        default=None,
+        max_length=255,
+        description="Legacy free-text photo reference; server-managed uploads use photo_id.",
+    )
 
     @field_validator("reported_at")
     @classmethod
@@ -34,8 +38,6 @@ class ComplaintCreateRequest(ApiModel):
     @field_validator("photo_path")
     @classmethod
     def reject_reserved_prefix(cls, value: str | None) -> str | None:
-        if value is not None and len(value) > 255:
-            raise ValueError("photo_path must be at most 255 characters")
         if value is not None and value.startswith(UPLOADS_PREFIX):
             raise ValueError("photo_path may not reference the server uploads namespace")
         return value

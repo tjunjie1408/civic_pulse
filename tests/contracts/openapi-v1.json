@@ -125,12 +125,14 @@
           "photo_path": {
             "anyOf": [
               {
+                "maxLength": 255,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "description": "Legacy free-text photo reference; server-managed uploads use photo_id.",
             "title": "Photo Path"
           },
           "reported_at": {
