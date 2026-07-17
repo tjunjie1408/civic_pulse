@@ -24,6 +24,7 @@ from civicpulse.domain import (
     ReviewRecord,
     ReviewStatus,
 )
+from civicpulse.photos import StoredPhoto
 
 
 @dataclass(frozen=True)
@@ -172,6 +173,13 @@ class SQLiteRepository:
                         version INTEGER NOT NULL CHECK(version >= 1),
                         UNIQUE(left_id, right_id)
                     );
+                    CREATE TABLE IF NOT EXISTS photos (
+                        photo_id TEXT PRIMARY KEY,
+                        stored_name TEXT NOT NULL UNIQUE,
+                        media_type TEXT NOT NULL CHECK(media_type IN ('image/jpeg','image/png')),
+                        byte_size INTEGER NOT NULL CHECK(byte_size > 0),
+                        created_at TEXT NOT NULL
+                    );
                     """
                 )
                 columns = {
@@ -256,6 +264,52 @@ class SQLiteRepository:
                 )
                 connection.commit()
                 return complaint
+            except Exception:
+                connection.rollback()
+                raise
+
+    def add_photo(self, photo: StoredPhoto, created_at: datetime) -> None:
+        with self.connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            try:
+                connection.execute(
+                    "INSERT INTO photos(photo_id,stored_name,media_type,byte_size,created_at) "
+                    "VALUES(?,?,?,?,?)",
+                    (
+                        str(photo.photo_id),
+                        photo.stored_name,
+                        photo.media_type,
+                        photo.byte_size,
+                        created_at.isoformat(),
+                    ),
+                )
+                connection.commit()
+            except Exception:
+                connection.rollback()
+                raise
+
+    def get_photo(self, photo_id: UUID) -> StoredPhoto | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                "SELECT photo_id,stored_name,media_type,byte_size FROM photos WHERE photo_id=?",
+                (str(photo_id),),
+            ).fetchone()
+        if row is None:
+            return None
+        return StoredPhoto(
+            photo_id=UUID(row["photo_id"]),
+            media_type=row["media_type"],
+            byte_size=row["byte_size"],
+            stored_name=row["stored_name"],
+        )
+
+    def purge_photos(self) -> int:
+        with self.connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            try:
+                cursor = connection.execute("DELETE FROM photos")
+                connection.commit()
+                return cursor.rowcount
             except Exception:
                 connection.rollback()
                 raise
