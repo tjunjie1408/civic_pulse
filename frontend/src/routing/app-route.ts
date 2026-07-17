@@ -3,18 +3,24 @@ import type { Ref } from "vue"
 
 export type AppRoute =
   | { readonly kind: "queue" }
+  | { readonly kind: "reviews" }
   | { readonly kind: "incident-detail"; readonly snapshotId: string }
 
 export interface AppRouteController {
   readonly route: Readonly<Ref<AppRoute>>
   readonly notice: Readonly<Ref<string | null>>
   readonly openIncident: (snapshotId: string) => void
+  readonly openReviews: () => void
   readonly returnToQueue: (notice?: string | null) => void
 }
 
 const INCIDENT_ROUTE_PREFIX = "/incidents/"
+const REVIEWS_ROUTE = "/reviews"
 
 export function parseAppRoute(pathname: string): AppRoute {
+  if (pathname.replace(/\/$/, "") === REVIEWS_ROUTE) {
+    return { kind: "reviews" }
+  }
   if (!pathname.startsWith(INCIDENT_ROUTE_PREFIX)) {
     return { kind: "queue" }
   }
@@ -57,6 +63,11 @@ export function useAppRoute(): AppRouteController {
     navigate(incidentDetailPath(snapshotId), { kind: "incident-detail", snapshotId })
   }
 
+  const openReviews = (): void => {
+    notice.value = null
+    navigate(REVIEWS_ROUTE, { kind: "reviews" })
+  }
+
   const returnToQueue = (nextNotice: string | null = null): void => {
     window.history.replaceState({}, "", "/")
     route.value = { kind: "queue" }
@@ -70,6 +81,7 @@ export function useAppRoute(): AppRouteController {
     route: readonly(route),
     notice: readonly(notice),
     openIncident,
+    openReviews,
     returnToQueue,
   }
 }

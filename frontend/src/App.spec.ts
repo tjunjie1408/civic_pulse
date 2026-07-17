@@ -3,10 +3,19 @@ import { afterEach, describe, expect, it } from "vitest"
 
 import type { IncidentDetailResult } from "./features/incidents/application/incident-detail-port"
 import type { IncidentListResult } from "./features/incidents/application/incident-list-port"
+import type {
+  ReviewDetailResult,
+  ReviewListResult,
+  ReviewMutationResult,
+} from "./features/reviews/application/review-port"
 import {
   incidentDetailFixture,
   incidentPageFixture,
 } from "./features/incidents/testing/incident-fixtures"
+import {
+  reviewDetailFixture,
+  reviewSummaryFixture,
+} from "./features/reviews/testing/review-fixtures"
 import App from "./App.vue"
 
 class FakeLoadIncidentQueue {
@@ -39,6 +48,48 @@ class ControllableLoadIncidentDetail {
   }
 }
 
+class FakeLoadReviewQueue {
+  execute(signal: AbortSignal): Promise<ReviewListResult> {
+    void signal
+    return Promise.resolve({
+      ok: true,
+      page: { items: [reviewSummaryFixture], limit: 50, offset: 0, total: 1 },
+    })
+  }
+}
+
+class FakeLoadReviewDetail {
+  execute(reviewId: string, signal: AbortSignal): Promise<ReviewDetailResult> {
+    void signal
+    return Promise.resolve(
+      reviewId === reviewDetailFixture.reviewId
+        ? { ok: true, detail: reviewDetailFixture }
+        : { ok: false, error: { kind: "missing" } },
+    )
+  }
+}
+
+class FakeResolveReview {
+  execute(
+    reviewId: string,
+    action: "approve" | "reject",
+    request: { readonly reviewerId: string; readonly note: string | null },
+    signal: AbortSignal,
+  ): Promise<ReviewMutationResult> {
+    void reviewId
+    void action
+    void request
+    void signal
+    return Promise.resolve({ ok: false, error: { kind: "service", status: 501 } })
+  }
+}
+
+const reviewProps = {
+  loadReviewQueue: new FakeLoadReviewQueue(),
+  loadReviewDetail: new FakeLoadReviewDetail(),
+  resolveReview: new FakeResolveReview(),
+}
+
 afterEach(() => {
   window.history.replaceState({}, "", "/")
 })
@@ -49,6 +100,7 @@ describe("App shell", () => {
       props: {
         loadIncidentQueue: new FakeLoadIncidentQueue(),
         loadIncidentDetail: new FakeLoadIncidentDetail(),
+        ...reviewProps,
       },
     })
     const banner = wrapper.find("header")
@@ -68,6 +120,7 @@ describe("App shell", () => {
       props: {
         loadIncidentQueue: new FakeLoadIncidentQueue(),
         loadIncidentDetail: new FakeLoadIncidentDetail(),
+        ...reviewProps,
       },
     })
     await flushPromises()
@@ -89,6 +142,7 @@ describe("App shell", () => {
       props: {
         loadIncidentQueue: new FakeLoadIncidentQueue(),
         loadIncidentDetail: detailLoader,
+        ...reviewProps,
       },
     })
 
@@ -101,6 +155,24 @@ describe("App shell", () => {
       "no successor was selected automatically",
     )
     expect(wrapper.find("[data-incident-detail-ready]").exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it("navigates to the separate pending review view", async () => {
+    const wrapper = mount(App, {
+      props: {
+        loadIncidentQueue: new FakeLoadIncidentQueue(),
+        loadIncidentDetail: new FakeLoadIncidentDetail(),
+        ...reviewProps,
+      },
+    })
+
+    await wrapper.get(".app-shell__nav button:nth-child(2)").trigger("click")
+    await flushPromises()
+
+    expect(window.location.pathname).toBe("/reviews")
+    expect(wrapper.find(".review-queue").text()).toContain("Pending review queue")
+    expect(wrapper.find(".incident-queue").exists()).toBe(false)
     wrapper.unmount()
   })
 })

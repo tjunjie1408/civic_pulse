@@ -12,6 +12,7 @@ describe("app route", () => {
 
   it("falls back to the queue for malformed or unrelated paths", () => {
     expect(parseAppRoute("/")).toEqual({ kind: "queue" })
+    expect(parseAppRoute("/reviews/")).toEqual({ kind: "reviews" })
     expect(parseAppRoute("/incidents/")).toEqual({ kind: "queue" })
     expect(parseAppRoute("/incidents/a/b")).toEqual({ kind: "queue" })
     expect(parseAppRoute("/incidents/%E0%A4%A")).toEqual({ kind: "queue" })
