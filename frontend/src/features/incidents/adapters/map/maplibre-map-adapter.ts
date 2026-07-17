@@ -24,7 +24,8 @@ export interface MapLike {
   addSource(id: string, source: unknown): void
   removeSource(id: string): void
   setStyle(style: unknown): void
-  addLayer(layer: unknown): void
+  getStyle(): { readonly layers?: readonly { readonly id: string; readonly type?: string }[] }
+  addLayer(layer: unknown, beforeId?: string): void
   removeLayer(id: string): void
   resize(): void
   remove(): void
@@ -144,6 +145,10 @@ function heatLayer(id: string, filter?: readonly unknown[]) {
       "heatmap-color": DENSITY_COLOR_EXPRESSION,
     },
   }
+}
+
+function firstSymbolLayerId(map: MapLike): string | undefined {
+  return map.getStyle().layers?.find((layer) => layer.type === "symbol")?.id
 }
 
 function mapFeatureIncidentId(event: unknown): string | null {
@@ -279,7 +284,7 @@ export function createMapLibreIncidentMapRenderer(
     map.addSource(CENTROID_SOURCE_ID, { type: "geojson", data: centroidFeatureCollection(view) })
     renderedSourceIds.add(CENTROID_SOURCE_ID)
     if (view.mode.kind === "all") {
-      map.addLayer(heatLayer(NEUTRAL_LAYER_ID))
+      map.addLayer(heatLayer(NEUTRAL_LAYER_ID), firstSymbolLayerId(map))
       renderedLayerIds.add(NEUTRAL_LAYER_ID)
     } else {
       map.addLayer(
@@ -288,6 +293,7 @@ export function createMapLibreIncidentMapRenderer(
           ["get", "dominantCategory"],
           view.mode.category,
         ]),
+        firstSymbolLayerId(map),
       )
       renderedLayerIds.add(CATEGORY_LAYER_ID)
     }

@@ -88,8 +88,11 @@ function fakeMap(styleLoaded = true) {
     setStyle(style: unknown) {
       calls.push({ method: "setStyle", args: [style] })
     },
-    addLayer(layer: unknown) {
-      calls.push({ method: "addLayer", args: [layer] })
+    getStyle() {
+      return { layers: [{ id: "background", type: "background" }, { id: "road-label", type: "symbol" }] }
+    },
+    addLayer(layer: unknown, beforeId?: string) {
+      calls.push({ method: "addLayer", args: [layer, beforeId] })
       if (typeof layer === "object" && layer !== null && "id" in layer) {
         layers.set(String(layer.id), layer)
       }
@@ -199,6 +202,22 @@ describe("createMapLibreIncidentMapRenderer", () => {
     })
   })
 
+  it("places density beneath the first symbol layer while keeping operational overlays above it", () => {
+    const fake = fakeMap()
+    const renderer = createMapLibreIncidentMapRenderer({ createMap: factoryFor(fake) })
+    renderer.mount(document.createElement("div"))
+
+    renderer.render(view())
+
+    const layerAdds = fake.calls.filter((call) => call.method === "addLayer")
+    expect(layerAdds[0]?.args[1]).toBe("road-label")
+    expect(layerAdds.slice(1).map((call) => call.args[1])).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    ])
+  })
   it("returns neutral fallback for All mode when exact category heat is unavailable", () => {
     const fake = fakeMap()
     const renderer = createMapLibreIncidentMapRenderer({ createMap: factoryFor(fake) })

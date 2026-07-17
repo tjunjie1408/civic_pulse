@@ -158,6 +158,21 @@ describe("IncidentMapPanel", () => {
     expect(wrapper.get("[data-map-status]").attributes("role")).toBe("status")
   })
 
+  it("announces the initial online map load until the style is ready", async () => {
+    const renderer = rendererSpy()
+    const wrapper = mount(IncidentMapPanel, {
+      props: { incidents: [floodingIncident], createRenderer: () => renderer },
+    })
+
+    expect(wrapper.get("[data-map-container]").attributes("aria-busy")).toBe("true")
+    expect(wrapper.get("[data-map-loading]").text()).toContain("Loading street map")
+
+    renderer.emitLifecycle("ready")
+    await nextTick()
+
+    expect(wrapper.get("[data-map-container]").attributes("aria-busy")).toBe("false")
+    expect(wrapper.find("[data-map-loading]").exists()).toBe(false)
+  })
   it("forwards map selection and preview events to the queue page", async () => {
     const renderer = rendererSpy()
     const wrapper = mount(IncidentMapPanel, {

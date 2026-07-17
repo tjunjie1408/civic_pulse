@@ -48,6 +48,7 @@ const selectedMode = computed<HeatmapMode>(() =>
 )
 const cells = computed(() => buildHeatCells(props.incidents, selectedMode.value))
 const isEmpty = computed(() => cells.value.length === 0)
+const isMapLoading = computed(() => mapLifecycle.value === "loading")
 const isMapDegraded = computed(() => mapLifecycle.value === "degraded")
 const isMapRecovering = computed(() => mapLifecycle.value === "recovering")
 const handleResize = (): void => renderer.resize()
@@ -135,6 +136,7 @@ onBeforeUnmount(() => {
         data-map-container
         role="img"
         aria-label="Confirmed incident density map"
+        :aria-busy="isMapLoading"
       />
       <div
         class="incident-map-panel__density-legend"
@@ -162,12 +164,16 @@ onBeforeUnmount(() => {
 
 
     <div
-      v-if="isMapDegraded || isMapRecovering"
+      v-if="isMapLoading || isMapDegraded || isMapRecovering"
       class="incident-map-panel__notice incident-map-panel__notice--lifecycle"
       data-map-status
       role="status"
     >
-      <span v-if="isMapDegraded">Base map unavailable. Incident overlays remain available.</span>
+      <span
+        v-if="isMapLoading"
+        data-map-loading
+      >Loading street map.</span>
+      <span v-else-if="isMapDegraded">Base map unavailable. Incident overlays remain available.</span>
       <span v-else>Restoring base map.</span>
       <button
         v-if="isMapDegraded"
