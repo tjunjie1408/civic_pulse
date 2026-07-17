@@ -36,12 +36,10 @@ function fakeMap(styleLoaded = true) {
       const eventListeners = listeners.get(event) ?? new Set<Listener>()
       eventListeners.add(listener)
       listeners.set(event, eventListeners)
-      return map
     },
     off(event: string, listener: Listener) {
       calls.push({ method: "off", args: [event, listener] })
       listeners.get(event)?.delete(listener)
-      return map
     },
     addSource(id: string, source: unknown) {
       calls.push({ method: "addSource", args: [id, source] })

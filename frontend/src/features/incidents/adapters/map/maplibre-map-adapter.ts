@@ -5,8 +5,8 @@ import type { IncidentMapRenderer } from "../../application/incident-map-port"
 
 export interface MapLike {
   isStyleLoaded(): boolean
-  on(event: string, listener: (...args: unknown[]) => void): MapLike
-  off(event: string, listener: (...args: unknown[]) => void): MapLike
+  on(event: string, listener: (...args: unknown[]) => void): void
+  off(event: string, listener: (...args: unknown[]) => void): void
   addSource(id: string, source: unknown): void
   removeSource(id: string): void
   addLayer(layer: unknown): void
@@ -112,7 +112,9 @@ export function createMapLibreIncidentMapRenderer(
       zoom: options.zoom ?? 11,
       attributionControl: false,
     })
-    map.on("load", onLoad).on("error", onError).on("resize", onResize)
+    map.on("load", onLoad)
+    map.on("error", onError)
+    map.on("resize", onResize)
     styleReady = map.isStyleLoaded()
     mounted = true
   }
@@ -169,7 +171,9 @@ export function createMapLibreIncidentMapRenderer(
     if (map === null) {
       return
     }
-    map.off("load", onLoad).off("error", onError).off("resize", onResize)
+    map.off("load", onLoad)
+    map.off("error", onError)
+    map.off("resize", onResize)
     if (activeLayerId !== null) {
       map.removeLayer(activeLayerId)
     }
