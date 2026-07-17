@@ -11,8 +11,10 @@ from civicpulse.api.errors import install_error_handlers
 from civicpulse.api.routes.health import router as health_router
 from civicpulse.api.routes.incidents import router as incidents_router
 from civicpulse.api.routes.mutations import router as mutations_router
+from civicpulse.api.routes.photos import router as photos_router
 from civicpulse.api.routes.reviews import router as reviews_router
 from civicpulse.incident_query import IncidentQueryService
+from civicpulse.photos import PhotoStore
 from civicpulse.repository import SQLiteRepository
 from civicpulse.service import CivicPulseService, HealthReport
 
@@ -32,6 +34,7 @@ def create_app(
     repository: SQLiteRepository | None = None,
     health_service: Callable[[], HealthReport] | None = None,
     incident_query_service: IncidentQueryService | None = None,
+    photo_store: PhotoStore | None = None,
 ) -> FastAPI:
     """Build an application around injected services without loading runtime dependencies."""
     resolved = settings or AppSettings()
@@ -40,10 +43,12 @@ def create_app(
     app.state.repository = repository
     app.state.health_service = health_service
     app.state.incident_query_service = incident_query_service
+    app.state.photo_store = photo_store
     app.state.settings = resolved
     app.include_router(health_router, prefix=resolved.api_prefix)
     app.include_router(incidents_router, prefix=resolved.api_prefix)
     app.include_router(mutations_router, prefix=resolved.api_prefix)
     app.include_router(reviews_router, prefix=resolved.api_prefix)
+    app.include_router(photos_router, prefix=resolved.api_prefix)
     install_error_handlers(app)
     return app

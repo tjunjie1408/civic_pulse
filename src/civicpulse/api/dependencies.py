@@ -9,6 +9,8 @@ from fastapi import Depends, Request
 
 from civicpulse.api.errors import ApiError
 from civicpulse.incident_query import IncidentQueryService
+from civicpulse.photos import PhotoStore
+from civicpulse.repository import SQLiteRepository
 from civicpulse.service import CivicPulseService, HealthReport
 
 
@@ -62,6 +64,28 @@ def get_incident_query_service(
         priority_policy=service.priority_policy,
         sensitive_locations=service.sensitive_locations,
     )
+
+
+def get_photo_store(request: Request) -> PhotoStore:
+    store = getattr(request.app.state, "photo_store", None)
+    if store is None:
+        raise ApiError(
+            code="readiness_failure",
+            message="Photo storage is not configured.",
+            status_code=503,
+        )
+    return cast(PhotoStore, store)
+
+
+def get_repository(request: Request) -> SQLiteRepository:
+    repository = getattr(request.app.state, "repository", None)
+    if repository is None:
+        raise ApiError(
+            code="readiness_failure",
+            message="Application services are not configured.",
+            status_code=503,
+        )
+    return cast(SQLiteRepository, repository)
 
 
 def get_app_settings(request: Request) -> AppSettingsProtocol:
