@@ -130,7 +130,7 @@ def _detail(
 def _sort_key(view: ReviewRead) -> tuple[int, float, str]:
     record = view.review
     if record.status is ReviewStatus.PENDING:
-        return 0, record.created_at.timestamp(), str(record.review_id)
+        return 0, -record.created_at.timestamp(), str(record.review_id)
     resolved_at = record.resolved_at or datetime.min.replace(tzinfo=UTC)
     return 1, -resolved_at.timestamp(), str(record.review_id)
 

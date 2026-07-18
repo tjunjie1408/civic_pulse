@@ -49,11 +49,12 @@ def evidence() -> SimpleNamespace:
 def review(
     status: ReviewStatus = ReviewStatus.PENDING,
     *,
+    review_id: UUID = REVIEW_ID,
     created_at: datetime = NOW,
     resolved_at: datetime | None = None,
 ) -> SimpleNamespace:
     return SimpleNamespace(
-        review_id=REVIEW_ID,
+        review_id=review_id,
         left_id=LEFT_ID,
         right_id=RIGHT_ID,
         matcher_recommendation=MatchState.REVIEW_REQUIRED,
@@ -156,6 +157,30 @@ def test_review_list_filters_paginates_and_sorts_pending_then_resolved() -> None
     assert payload["total"] == 2
     assert payload["limit"] == 1
     assert payload["items"][0]["status"] == "pending"
+
+
+def test_review_list_orders_pending_newest_first() -> None:
+    older_id = UUID("20000000-0000-0000-0000-0000000000aa")
+    newer_id = UUID("20000000-0000-0000-0000-0000000000bb")
+    service = FakeReviewService()
+    service.views = [
+        SimpleNamespace(
+            review=review(review_id=older_id, created_at=NOW),
+            complaint_a=complaint(LEFT_ID, "Pothole at Block A"),
+            complaint_b=complaint(RIGHT_ID, "Road hole near Block A"),
+        ),
+        SimpleNamespace(
+            review=review(review_id=newer_id, created_at=NOW + timedelta(hours=5)),
+            complaint_a=complaint(LEFT_ID, "Pothole at Block A"),
+            complaint_b=complaint(RIGHT_ID, "Road hole near Block A"),
+        ),
+    ]
+
+    response = client(service).get("/api/v1/reviews", params={"status": "pending"})
+
+    assert response.status_code == 200
+    ids = [item["review_id"] for item in response.json()["items"]]
+    assert ids == [str(newer_id), str(older_id)]
 
 
 def test_review_list_status_filter_and_resolved_order_are_deterministic() -> None:
